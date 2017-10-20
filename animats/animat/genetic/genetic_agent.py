@@ -382,7 +382,6 @@ class GeneticAgentConfig(AgentConfig):
 # x=0 left
 ORIENTATION_MATRIX = [(0,-1), (1,-1), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1)]
 
-
 class GeneticAgent(Agent):
     def __init__(self, config, network, needs=None, position=(0,0), gender='neuter', growthRate=0.01):
         super().__init__(config, network, needs, position, growthRate)
@@ -575,3 +574,18 @@ class GeneticAgent(Agent):
 
 
         return offsprings
+
+
+class GeneticAnimalAgent(GeneticAgent):
+    def __init__(self, config, network, needs=None, position=(0, 0), gender='neuter', growthRate=0.01):
+        super().__init__(config, network, needs, position, gender, growthRate)
+        # genetic extension
+        self.caught = False # whether this animal is caught or not
+
+    def isCaught(self):
+        return self.caught
+
+    def setCaught(self, v):
+        self.caught = v
+
+

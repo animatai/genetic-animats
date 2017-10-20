@@ -31,6 +31,7 @@ from ..environment import Environment as EnvClass
 from ..environment import EnvironmentConfig
 from .grass_agent import *
 from .sheep_agent import *
+from .wolf_agent import *
 
 from agents import Thing
 from agents import Agent

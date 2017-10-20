@@ -24,10 +24,9 @@ import itertools
 import copy
 
 
-from ..network import *
+#from ..network import *
 from .genetic_agent import *
 
-#from agents import Agent as AgentClass
 
 # Setup logging
 # =============
@@ -57,11 +56,6 @@ def warn(*args):
 def createGeneticSheepAgent(conf, objectives, gender='female'):
     agent = GeneticSheepAgent(conf, createNetwork(conf.network, objectives, conf.seed), objectives, (0,0), gender)
     return agent
-
-
-class GeneticAnimalAgent(GeneticAgent):
-    def chase(self):
-        pass
 
 
 class GeneticSheepAgent(GeneticAnimalAgent):
