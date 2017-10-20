@@ -62,10 +62,6 @@ def createGeneticGrassAgent(conf, objectives, gender='neuter', growthRate=0.01):
     return agent
 
 
-class GeneticPlantAgent(GeneticAgent):
-    def is_grazed(self):
-        pass
-
 
 class GeneticGrassAgent(GeneticPlantAgent):
     def grow_by_length(self):

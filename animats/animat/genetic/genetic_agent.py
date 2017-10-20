@@ -589,3 +589,6 @@ class GeneticAnimalAgent(GeneticAgent):
         self.caught = v
 
 
+class GeneticPlantAgent(GeneticAgent):
+    def is_grazed(self):
+        pass

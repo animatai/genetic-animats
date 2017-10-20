@@ -59,5 +59,10 @@ def createGeneticSheepAgent(conf, objectives, gender='female'):
 
 
 class GeneticSheepAgent(GeneticAnimalAgent):
+    def is_bitten(self):
+        # if the sheep is bitten, reduce the vitalness by 0.3
+        self.needs['energy'] = max((self.needs['energy'] - 0.3), 0)
+        self.needs['water'] = max((self.needs['water'] - 0.3), 0)
+
     def escape(self):
         pass

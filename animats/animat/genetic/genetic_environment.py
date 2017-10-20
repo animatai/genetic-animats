@@ -98,6 +98,13 @@ class GeneticEnvironment(EnvClass):
                 observation['g'] = 1
                 observation.pop('r', None)
 
+        if isinstance(agent, GeneticWolfAgent):
+            if self.some_agents_at(agent.position, GeneticSheepAgent):
+                observation['g'] = 1
+                # if current block is sand, disable it
+                if observation['r'] == 1:
+                    observation.pop('r', None)
+
         debug('--------------\npercept - cell:' + cell + ", observation:" + str(observation))
         agent.network.tick(observation)
 
@@ -141,6 +148,7 @@ class GeneticEnvironment(EnvClass):
                 elif isinstance(agent, GeneticGrassAgent):
                     agent.grow_by_length()
                     agent.wellbeeingTrail.append(agent.wellbeeing())
+
             self.exogenous_change()
 
     def execute_action(self, agent, action):
@@ -149,21 +157,26 @@ class GeneticEnvironment(EnvClass):
 
         act, _, _ = action
         reward = self.takeAction(agent, act)
-        # TODO: reduce the grass length
         if act == 'eat':
-            # a possible sequence is:
-            # 1, agent choose to 'eat' at a sand block with no grass, perception outputs 'r' = 1, reward is negative.
-            # 2, during step, a grass is given to birth at this sand block
-            # 3, agent now exectute the action: 'eat' with the negative reward. If we do not exclude the new grass which
-            #    did not exist before, we will eat the grass with the negative reward. So we ignore newly born grass to
-            #    keep consistency with the previous action/rewards ('eat' in a sand block with negative rewards)
-            all_grass = self.list_agents_at(agent.position, GeneticGrassAgent)
-            old_grass = [x for x in all_grass if not x.is_newlyborn()]
-            if len(old_grass) > 0:
-                old_grass[0].is_grazed()
-                gdebug("sheep graze grass!")
-                if reward['energy'] < 0:
-                    debug("something is wrong!")
+            if isinstance(agent, GeneticSheepAgent):
+                # a possible sequence is:
+                # 1, agent choose to 'eat' at a sand block with no grass, perception outputs 'r' = 1, reward is negative.
+                # 2, during step, a grass is given to birth at this sand block
+                # 3, agent now exectute the action: 'eat' with the negative reward. If we do not exclude the new grass which
+                #    did not exist before, we will eat the grass with the negative reward. So we ignore newly born grass to
+                #    keep consistency with the previous action/rewards ('eat' in a sand block with negative rewards)
+                all_grass = self.list_agents_at(agent.position, GeneticGrassAgent)
+                old_grass = [x for x in all_grass if not x.is_newlyborn()]
+                if len(old_grass) > 0:
+                    old_grass[0].is_grazed()
+                    gdebug("sheep graze grass!")
+                    # for debugging
+                    if reward['energy'] < 0:
+                        debug("something is wrong!")
+            elif isinstance(agent, GeneticWolfAgent):
+                sheeps = self.some_agents_at(agent.position, GeneticSheepAgent)
+                if len(sheeps) > 0:
+                    sheeps[0].is_bitten()
 
         agent.takeAction(action, reward)
 
@@ -186,7 +199,6 @@ class GeneticEnvironment(EnvClass):
               self.wss)
 
         def move_agent(agent, dx, dy):
-            #            print "PP MOVE", agent.position, dx, dy
             nx = agent.position[0] + dx
             ny = agent.position[1] + dy
             if self.config.is_torus:
@@ -194,14 +206,12 @@ class GeneticEnvironment(EnvClass):
                 ny = ny % self.getHeight()
             self._playback(agent, action, nx, ny)
             if nx >= 0 and nx < self.getWidth() and ny >= 0 and ny < self.getHeight():
-                # if the cell to go is not occupied by any animal
-                if not self.some_agents_at((nx, ny), GeneticAnimalAgent):
+                # if the cell to go is not occupied by same kind of animal as itself
+                if not self.some_agents_at((nx, ny), type(agent)):
                     agent.position = (nx, ny)
                 if self.wss is not None:
                     self.fieldConfig['agents'][agent.name]['pos'] = agent.position
                     self.wss.send_update_agent(agent.name, self.fieldConfig['agents'][agent.name])
-
-                    #            print "PP NEW", agent.position
 
         if action == 'up':
             dx, dy = agentModule.ORIENTATION_MATRIX[agent.orientation % 8]
@@ -247,13 +257,13 @@ class GeneticEnvironment(EnvClass):
         is an instance of class tclass (or a subclass)."""
         return self.list_agents_at(location, tclass) != []
 
-    def adjacent_agents_at(self, agent):
+    def adjacent_agents_at(self, agent, tclass=Thing):
         return [x for x in self.agents
-                if agent.name != x.name and locations_are_adjacent(x.position, agent.position) and isinstance(x, type(agent))]
+                if agent.name != x.name and locations_are_adjacent(x.position, agent.position) and isinstance(x, tclass)]
 
-    def adjacent_available_positions_at(self, agent):
+    def adjacent_available_positions_at(self, agent, tclass=Thing):
         occupied = [x.position for x in self.agents
-                if agent.name != x.name and locations_are_adjacent(x.position, agent.position) and isinstance(x, type(agent))]
+                if agent.name != x.name and locations_are_adjacent(x.position, agent.position) and isinstance(x, tclass)]
         available = self.adjacent_locations(agent.position)
         return list(set(available) - set(occupied))
 
@@ -307,13 +317,13 @@ class GeneticEnvironment(EnvClass):
                 agent.reset_pregnancy()
                 return
 
-            locations = self.adjacent_available_positions_at(agent)
-            # filter out water blocks for plant agents
             if isinstance(agent, GeneticPlantAgent):
-                for i in locations:
-                    if i[1]>= len(self.world) or i[0] >= len(self.world[i[1]]):
-                        debug("Something is wrong!")
+                locations = self.adjacent_available_positions_at(agent,GeneticPlantAgent)
+                # filter out water blocks for plant agents
                 locations = [x for x in locations if self.world[x[1]][x[0]] != 'c']
+            else:
+                locations = self.adjacent_available_positions_at(agent,GeneticAnimalAgent)
+
             if len(locations) == 0:
                 gdebug("agent_reproduce: no available cells for offsprings delivery!")
                 agent.reset_pregnancy()
@@ -349,7 +359,7 @@ class GeneticEnvironment(EnvClass):
             agent.reproduce()
         else:  # agent can be male or female
             # find out the list of mature agents adjacent to the agent
-            adjacent = self.adjacent_agents_at(agent)
+            adjacent = self.adjacent_agents_at(agent, type(agent))
             if len(adjacent) > 0:  # if the list is not empty
                 debug('agent (male/female) has adjacent agents around!')
                 if agent.is_female():  # current agent is female

@@ -349,13 +349,23 @@ def drawAgent(agent, row, col, kind):
     right = left + cellSize
     top = margin + row * cellSize
     bottom = top + cellSize
-    if kind == 'sheep':
+    if kind == 'sheep' or kind == 'wolf':
         #        canvas.create_text(left + cellSize/3, top + cellSize/3, text='S', fill='red', font=ft)
         #        canvas.create_image(left + cellSize / 3, top + cellSize / 3, image=canvas.data.sheepImg)
+        if kind == 'sheep':
+            # sheep is placed at the left corner of the cell
+            img = canvas.data.sheepImg
+            imgp = canvas.data.sheepImgP
+        elif kind == 'wolf':
+            # wolf is placed at the right corner of the cell
+            left += cellSize / 2
+            img = canvas.data.wolfImg
+            imgp = canvas.data.wolfImgP
+
         if agent.is_pregnant():
-            canvas.create_image(left + margin, top + margin, image=canvas.data.sheepImgP, anchor=NW)
+            canvas.create_image(left + margin, top + margin, image=imgp, anchor=NW)
         else:
-            canvas.create_image(left + margin, top + margin, image=canvas.data.sheepImg, anchor=NW)
+            canvas.create_image(left + margin, top + margin, image=img, anchor=NW)
         # draw the frame for the agent under spotlight
         if agent == canvas.data.curAgent:
             canvas.create_rectangle(left, top, left + cellSize, top + cellSize, outline='red')
@@ -372,9 +382,6 @@ def drawAgent(agent, row, col, kind):
             canvas.create_image(left, top + cellSize/2, image=canvas.data.grassImgThree, anchor=NW)
         else:
             canvas.create_image(left, top + cellSize/2, image=canvas.data.grassImgFour, anchor=NW)
-
-    elif kind == 'wolf':
-        canvas.create_text(left + cellSize / 2, top + cellSize / 2, text='w', fill='magenta')
     else:
         canvas.create_text(left + cellSize / 2, top + cellSize / 2, text='u', fill='black')
 
@@ -386,8 +393,10 @@ def drawAgents():
             kind = 'grass'
         elif isinstance(a, GeneticSheepAgent):
             kind = 'sheep'
-        else:
+        elif isinstance(a, GeneticWolfAgent):
             kind = 'wolf'
+        else:
+            return
 
         drawAgent(a, a.position[1], a.position[0], kind)
 
@@ -509,6 +518,8 @@ def run2DWorld(env, maxIterations=1000):
     canvas.data.curAgent = env.agents[0]
     canvas.data.sheepImg = PhotoImage(file='./images/sheep_32x32.png')
     canvas.data.sheepImgP = PhotoImage(file='./images/sheep_pregnant_32x32.png')
+    canvas.data.wolfImg = PhotoImage(file='./images/wolf_32x32.png')
+    canvas.data.wolfImgP = PhotoImage(file='./images/wolf_pregnant_32x32.png')
     canvas.data.dirtImg = PhotoImage(file='./images/dirt_64x64.png')
     canvas.data.riverImg = PhotoImage(file='./images/river_64x64.png')
     canvas.data.grassImg = PhotoImage(file='./images/grass_64x64.png')
