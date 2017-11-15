@@ -61,5 +61,14 @@ def createGeneticWolfAgent(conf, objectives, gender='female'):
 
 
 class GeneticWolfAgent(GeneticAnimalAgent):
+    def lockPrey(self, p):
+        self.prey = p
+
+    def getLockedPrey(self):
+        return self.prey
+
+    def resetLockPrey(self):
+        self.prey = None
+
     def escape(self):
         pass

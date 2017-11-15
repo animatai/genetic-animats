@@ -352,6 +352,7 @@ def drawAgent(agent, row, col, kind):
     if kind == 'sheep' or kind == 'wolf':
         #        canvas.create_text(left + cellSize/3, top + cellSize/3, text='S', fill='red', font=ft)
         #        canvas.create_image(left + cellSize / 3, top + cellSize / 3, image=canvas.data.sheepImg)
+        imgh = canvas.data.heartImg
         if kind == 'sheep':
             # sheep is placed at the left corner of the cell
             img = canvas.data.sheepImg
@@ -366,9 +367,13 @@ def drawAgent(agent, row, col, kind):
             canvas.create_image(left + margin, top + margin, image=imgp, anchor=NW)
         else:
             canvas.create_image(left + margin, top + margin, image=img, anchor=NW)
+
+        if agent.is_hormoneOn():
+            canvas.create_image(left + margin*2, top + margin*2, image=imgh, anchor=NW)
+
         # draw the frame for the agent under spotlight
         if agent == canvas.data.curAgent:
-            canvas.create_rectangle(left, top, left + cellSize, top + cellSize, outline='red')
+            canvas.create_rectangle(left, top, left + cellSize/2, top + cellSize/2, outline='red')
     elif kind == 'grass':
         # 0.1 - 0.3: one grass block
         # 0.3 - 0.5: two grass blocks
@@ -516,10 +521,10 @@ def run2DWorld(env, maxIterations=1000):
     canvas.data.status_str = StringVar(master=root)
     canvas.data.tick_str = StringVar(master=root)
     canvas.data.curAgent = env.agents[0]
-    canvas.data.sheepImg = PhotoImage(file='./images/sheep_32x32.png')
-    canvas.data.sheepImgP = PhotoImage(file='./images/sheep_pregnant_32x32.png')
-    canvas.data.wolfImg = PhotoImage(file='./images/wolf_32x32.png')
-    canvas.data.wolfImgP = PhotoImage(file='./images/wolf_pregnant_32x32.png')
+    canvas.data.sheepImg = PhotoImage(file='./images/sheep_16x16.png')
+    canvas.data.sheepImgP = PhotoImage(file='./images/sheep_16x32.png')
+    canvas.data.wolfImg = PhotoImage(file='./images/wolf_16x16.png')
+    canvas.data.wolfImgP = PhotoImage(file='./images/wolf_16x32.png')
     canvas.data.dirtImg = PhotoImage(file='./images/dirt_64x64.png')
     canvas.data.riverImg = PhotoImage(file='./images/river_64x64.png')
     canvas.data.grassImg = PhotoImage(file='./images/grass_64x64.png')
@@ -527,6 +532,7 @@ def run2DWorld(env, maxIterations=1000):
     canvas.data.grassImgTwo = PhotoImage(file='./images/grass_32x32.png')
     canvas.data.grassImgThree = PhotoImage(file='./images/grass_48x32.png')
     canvas.data.grassImgFour = PhotoImage(file='./images/grass_64x32.png')
+    canvas.data.heartImg = PhotoImage(file='./images/heart_16x13.png')
     # create a separate window to show the real time statistic of the world
     initOverallWindow()
 

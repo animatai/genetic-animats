@@ -161,7 +161,7 @@ class Agent(AgentClass):
 
         action, prediction, numPredictions = arg
 
-        # should check sensor!!
+        # should check sensor!
         cell = [x.name for x in self.network.activeSensors()] # self.environment.currentCell(self)
 
         #debug("KNOWN ACTIONS:", self.network.knownActions(need))

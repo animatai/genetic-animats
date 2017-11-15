@@ -93,20 +93,39 @@ class GeneticEnvironment(EnvClass):
 
         if isinstance(agent, GeneticSheepAgent):
             # find out whether there is grass
-            if self.some_agents_at(agent.position, GeneticGrassAgent) and observation['r'] == 1:
+            if self.some_agents_at(agent.position, GeneticGrassAgent) and ('r' in observation):
                 # if there is grass on top of sand, set 'g' to be 1, 'r' to be 0
                 observation['g'] = 1
                 observation.pop('r', None)
 
         if isinstance(agent, GeneticWolfAgent):
-            if self.some_agents_at(agent.position, GeneticSheepAgent):
+            sheep = self.list_agents_at(agent.position, GeneticSheepAgent)
+            if len(sheep) > 0:
+                # lock this sheep
+                agent.lockPrey(sheep[0])
+                gdebug('Sheep is locked!')
+                # trigger sensors
                 observation['g'] = 1
-                # if current block is sand, disable it
-                if observation['r'] == 1:
+                # if current block is sand, disable it (adaption to the existing code)
+                if 'r' in observation:
                     observation.pop('r', None)
 
         debug('--------------\npercept - cell:' + cell + ", observation:" + str(observation))
         agent.network.tick(observation)
+
+        # for the moment no hormone for plant agent
+        if isinstance(agent, type(GeneticPlantAgent)):
+            return None
+
+        # check surrounding agents for secreting or stopping hormon
+        adjacents = self.adjacent_agents_at(agent, type(agent))
+        n = len(adjacents)
+        if agent.is_hormoneOn():
+            if n <= agent.getHormoneThresholdLower() or n >= agent.getHormoneThresholdUpper() :
+                agent.hormoneOff()
+        else:
+            if n == agent.getHormoneThresholdTrigger():
+                agent.hormoneOn()
 
         return None
 
@@ -174,9 +193,11 @@ class GeneticEnvironment(EnvClass):
                     if reward['energy'] < 0:
                         debug("something is wrong!")
             elif isinstance(agent, GeneticWolfAgent):
-                sheeps = self.some_agents_at(agent.position, GeneticSheepAgent)
-                if len(sheeps) > 0:
-                    sheeps[0].is_bitten()
+                sheep = agent.getLockedPrey()
+                if sheep != None:
+                    sheep.is_bitten()
+                    agent.resetLockPrey()
+                    gdebug('Wolf bites sheep!')
 
         agent.takeAction(action, reward)
 

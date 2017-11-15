@@ -77,18 +77,33 @@ def run(inputPath, outputPath, outputDir=None, wss=None):
     envConfig = EnvironmentConfig(conf)
     envConfig.outputPath = outputDir
 
-    sagentConfig0 = GeneticAgentConfig(conf.get("agent1"))
-    sagentConfig1 = GeneticAgentConfig(conf.get("agent2"))
+    sagentConfig1 = GeneticAgentConfig(conf.get("agent1"))
+    sagentConfig2 = GeneticAgentConfig(conf.get("agent2"))
     nagentConfig0 = GeneticAgentConfig(conf.get("nagent"))
 
-    sagnt0 = createGeneticSheepAgent(sagentConfig0, sagentConfig0.objectivesWithValues.copy(), 'male')
+    sagnt0 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'male')
     sagnt0.name = 'S0'
     sagnt1 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'female')
     sagnt1.name = 'S1'
-    sagnt2 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'female')
+    sagnt2 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'male')
     sagnt2.name = 'S2'
-    sagnt3 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'male')
+    sagnt3 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'female')
     sagnt3.name = 'S3'
+    sagnt4 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'male')
+    sagnt4.name = 'S4'
+    sagnt5 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'female')
+    sagnt5.name = 'S5'
+
+    wagnt0 = createGeneticWolfAgent(sagentConfig2, sagentConfig2.objectivesWithValues.copy(), 'male')
+    wagnt0.name = 'W0'
+    wagnt1 = createGeneticWolfAgent(sagentConfig2, sagentConfig2.objectivesWithValues.copy(), 'female')
+    wagnt1.name = 'W1'
+    wagnt2 = createGeneticWolfAgent(sagentConfig2, sagentConfig2.objectivesWithValues.copy(), 'male')
+    wagnt2.name = 'W2'
+    wagnt3 = createGeneticWolfAgent(sagentConfig2, sagentConfig2.objectivesWithValues.copy(), 'female')
+    wagnt3.name = 'W3'
+
+
 
     nagnt0 = createGeneticGrassAgent(nagentConfig0, nagentConfig0.objectivesWithValues.copy(), 'neuter')
     nagnt0.name = 'G0'
@@ -106,6 +121,10 @@ def run(inputPath, outputPath, outputDir=None, wss=None):
     nagnt6.name = 'G6'
     nagnt7 = createGeneticGrassAgent(nagentConfig0, nagentConfig0.objectivesWithValues.copy(), 'neuter')
     nagnt7.name = 'G7'
+    nagnt8 = createGeneticGrassAgent(nagentConfig0, nagentConfig0.objectivesWithValues.copy(), 'neuter')
+    nagnt8.name = 'G8'
+    nagnt9 = createGeneticGrassAgent(nagentConfig0, nagentConfig0.objectivesWithValues.copy(), 'neuter')
+    nagnt9.name = 'G9'
 
 
     fieldConfig = {
@@ -133,24 +152,38 @@ def run(inputPath, outputPath, outputDir=None, wss=None):
     }
 
     env = GeneticEnvironment(envConfig, None, wss, fieldConfig)
-    sagnt0.position = (2, 0)
+    sagnt0.position = (1, 0)
     env.add_thing(sagnt0)
-    sagnt1.position = (3, 3)
+    sagnt1.position = (2, 3)
     env.add_thing(sagnt1)
-    sagnt2.position = (4, 5)
+    sagnt2.position = (3, 5)
     env.add_thing(sagnt2)
-    sagnt3.position = (6, 7)
+    sagnt3.position = (4, 3)
     env.add_thing(sagnt3)
+    sagnt4.position = (5, 6)
+    env.add_thing(sagnt4)
+    sagnt5.position = (6, 7)
+    env.add_thing(sagnt5)
+
+    wagnt0.position = (0, 0)
+    env.add_thing(wagnt0)
+    wagnt1.position = (2, 2)
+    env.add_thing(wagnt1)
+    wagnt2.position = (5, 2)
+    env.add_thing(wagnt2)
+#    wagnt3.position = (7, 5)
+#    env.add_thing(wagnt3)
+
 
     nagnt0.position = (0, 0)
     env.add_thing(nagnt0)
     nagnt1.position = (6, 1)
     env.add_thing(nagnt1)
-    nagnt2.position = (3, 2)
+    nagnt2.position = (2, 1)
     env.add_thing(nagnt2)
     nagnt3.position = (7, 3)
     env.add_thing(nagnt3)
-    nagnt4.position = (2, 4)
+    nagnt4.position = (2, 2)
     env.add_thing(nagnt4)
     nagnt5.position = (1, 5)
     env.add_thing(nagnt5)
@@ -158,6 +191,10 @@ def run(inputPath, outputPath, outputDir=None, wss=None):
     env.add_thing(nagnt6)
     nagnt7.position = (7, 7)
     env.add_thing(nagnt7)
+    nagnt8.position = (5, 5)
+    env.add_thing(nagnt8)
+    nagnt9.position = (6, 4)
+    env.add_thing(nagnt9)
 
 
     if wss is not None:

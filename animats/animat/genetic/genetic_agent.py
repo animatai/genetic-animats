@@ -90,12 +90,14 @@ def reproduce_netconf(agent):
     conf['q_learning_factor'] = agent.config.network.q_learning_factor
     conf['q_discount_factor'] = agent.config.network.q_discount_factor
     conf['reward_learning_factor'] = agent.config.network.reward_learning_factor
+    conf['nodeCost'] = agent.config.geno.nodeCost
     conf['sensors'] = agent.config.geno.sensors
     conf['motors'] = agent.config.geno.motors
+    conf['others'] = agent.config.geno.others
 #    nodes_list = [v for k, v in agent.network.nodes.items() if v not in set(agent.network.sensors)]
 #    nodes_other = [(v.name, [x.name for x in v.inputs], [x.name for x in v.outputs]) for v in nodes_list]
 
-    return conf, agent.config.geno.others
+    return conf
 
 
 def reproduce_genotype(agent):
@@ -120,9 +122,9 @@ def reproduce_genotype(agent):
 
 def reproduce(agent):
     conf = reproduce_genotype(agent)
-    netconf, other_nodes = reproduce_netconf(agent)
+    netconf = reproduce_netconf(agent)
     conf['network'] = netconf
-    return conf, other_nodes
+    return conf
 
 # compare whether agent_a is more vital than agent_b
 # arguments: agent_a, agent_b
@@ -144,9 +146,12 @@ def is_more_vital_than(agent_a, agent_b):
 def mate_feasible(agent_a, agent_b):
     # check whether two agents can mate or not
     debug('Function: mate_feasible')
-    dm = difference_ratio_lists(agent_a.config.geno.motors, agent_b.config.geno.motors)
-    dn = difference_ratio_lists(agent_a.config.geno.sensors, agent_b.config.geno.sensors)
-    return (dm + dn)/2 <= 0.4
+#    dm = difference_ratio_lists(agent_a.config.geno.motors, agent_b.config.geno.motors)
+#    dn = difference_ratio_lists(agent_a.config.geno.sensors, agent_b.config.geno.sensors)
+#    return (dm + dn)/2 <= 0.4
+    return (set(agent_a.config.geno.motors) == set(agent_b.config.geno.motors)
+            and set(agent_a.config.geno.sensors) == set(agent_b.config.geno.sensors))
+
 
 
 # compare the similarity between two list of nodes (sensors, actions and motors)
@@ -244,8 +249,14 @@ def merge_other_nodes_by_name(agent_a, agent_b):
     # extract name
     nodes_a_names = [n for n, i, o in agent_a.config.geno.others]
     nodes_b_names = [n for n, i, o in agent_b.config.geno.others]
+
+    # TODO preserve the nodes in common
+
     # b subtract a
     nodes_b_subtract_a_names = set(nodes_b_names) - set(nodes_a_names)
+
+    # TODO select the nodes that are not in common
+    # TODO   according to the cross-over percentage drawn from the uniform dist.
 
     # take all that are in b but not a (b - a)
     nodes_b_subtract_a = [(n, i, o) for n, i, o in agent_b.config.geno.others if n in nodes_b_subtract_a_names]
@@ -266,8 +277,10 @@ def merge_other_nodes_by_name(agent_a, agent_b):
 #            'q_learning_factor': q_learning_factor,
 #            'q_discount_factor': q_discount_factor,
 #            'reward_learning_factor': reward_learning_factor,
+#            'nodeCost': node cost factor
 #            'sensors': sensors,
-#            'motors': motors
+#            'motors': motors,
+#            'others': other nodes
 #        }
 def cross_over_netconf(agent_a, agent_b):
     conf = {}
@@ -278,18 +291,24 @@ def cross_over_netconf(agent_a, agent_b):
     conf['q_learning_factor'] = random_choose(agent_a.config.network.q_learning_factor, agent_b.config.network.q_learning_factor)
     conf['q_discount_factor'] = random_choose(agent_a.config.network.q_discount_factor, agent_b.config.network.q_discount_factor)
     conf['reward_learning_factor'] = random_choose(agent_a.config.network.reward_learning_factor, agent_b.config.network.reward_learning_factor)
-
+    conf['hormoneThresholdTrigger'] = random_choose(agent_a.config.geno.hormoneThresholdTrigger, agent_b.config.geno.hormoneThresholdTrigger)
+    conf['hormoneThresholdSecreteLower'] = random_choose(agent_a.config.geno.hormoneThresholdSecreteLower, agent_b.config.geno.hormoneThresholdSecreteLower)
+    conf['hormoneThresholdSecreteUpper'] = random_choose(agent_a.config.geno.hormoneThresholdSecreteUpper, agent_b.config.geno.hormoneThresholdSecreteUpper)
+    conf['nodeCost'] = random_choose(agent_a.config.geno.nodeCost, agent_b.config.geno.nodeCost)
     # take disjoint sensor nodes
     sensors = merge_sensor_nodes_by_name(agent_a, agent_b)
     # take disjoint motor nodes
     motors = merge_motor_nodes_by_name(agent_a, agent_b)
     # merge other nodes
-    nodes_other = merge_other_nodes_by_name(agent_a, agent_b)
+    other_nodes = merge_other_nodes_by_name(agent_a, agent_b)
+
+    # TODO get the Q tables for actions of nodes (sensors + others)
 
     conf['sensors'] = sensors
     conf['motors'] = motors
+    conf['others'] = other_nodes
 
-    return conf, nodes_other
+    return conf
 
 
 # merge genotype and network configuration of two agents
@@ -301,23 +320,26 @@ def cross_over(agent_a, agent_b):
     # crossover of genotypes
     conf = cross_over_genotype(agent_a, agent_b)
     # crossover of the network configurations
-    netconf, other_nodes = cross_over_netconf(agent_a, agent_b)
+    netconf = cross_over_netconf(agent_a, agent_b)
     conf['network'] = netconf
 
-    return conf, other_nodes
+    return conf
 
 
 # mutate the list of other nodes (AND, SEQ etc)
 # today we do not remove sensors or motors?
 # arguments: agent configuration, list of other nodes (AND, SEQ etc)
 # return value: agent configuration and list of other nodes after mutation
-def mutate(conf, other_nodes):
+def mutate(conf):
     # agent's genome mutate
     debug('Function: mutate')
     # remove other nodes (AND, SEQ etc)
     loop_i = 0
+    netconf = conf.get("network", {})
+    other_nodes = netconf.get("others", [])
 
     # randomly select elements to remove according to mutation rate, here 20%.
+    # TODO: remove top node only
 #    l = random.randint(1, len(other_nodes), int(len(other_nodes)/5))
 #    for x in l:
 #        other_nodes = remove_node(other_nodes, other_nodes[x])
@@ -327,7 +349,7 @@ def mutate(conf, other_nodes):
         other_nodes = remove_node(other_nodes, other_nodes[i])
 
     # add other nodes using existing sensors
-    sensors = conf.get("network").get("sensors")
+    sensors = netconf.get("sensors")
     for a, b in itertools.combinations(sensors, 2):
         if random.random() < 0.3:
             inputs = ['$' + x for x in sorted([a, b])]
@@ -340,8 +362,12 @@ def mutate(conf, other_nodes):
             if name not in set([x[0] for x in other_nodes]):
                 other_nodes.append((name, inputs, []))
 
-    # todo: add random values to actions
-    return conf, other_nodes
+    # update the network configuration
+    netconf["others"] = other_nodes
+    conf["network"] = netconf
+
+    # todo: mutate Q tables of actions of the resulted other nodes
+    return conf
 
 
 # Create an genetic agent
@@ -351,7 +377,7 @@ def createGeneticAgent(conf, objectives, gender='neuter'):
 
 
 class GenoType():
-    def __init__(self, conf, others):
+    def __init__(self, conf):
         # genetic extension
         self.fertility = conf.get("fertility", "asexual")  # asexual, sexual
         self.pubertyAge = conf.get("pubertyAge", 15)
@@ -365,18 +391,23 @@ class GenoType():
         # network of genotype
         self.sensors = conf.get("network", {}).get("sensors", "rgb0")
         self.motors = conf.get("network", {}).get("motors", ["left", "right", "up", "down", "eat", "drink"])
-        self.others = others
+        self.others = conf.get("network", {}).get("others", [])
+        self.nodeCost = conf.get("nodeCost", 0)
+        # for hormone
+        self.hormoneThresholdTrigger = conf.get("hormoneTriggerThreshold", 3)
+        self.hormoneThresholdSecreteLower = conf.get("hormoneThresholdSecreteLower", 1)
+        self.hormoneThresholdSecreteUpper = conf.get("hormoneThresholdSecreteUpper", 4)
 
 
 class GeneticAgentConfig(AgentConfig):
-    def __init__(self, conf, others=[]):
+    def __init__(self, conf):
         super().__init__(conf)
         self.learning = conf.get("learning", True)
         # move objectives and initial values into AgentConfig
         self.objectivesWithValues = conf.get("objectives", {})
         self.objectives = list(self.objectivesWithValues.keys())
         # genetic extension
-        self.geno = GenoType(conf, others)
+        self.geno = GenoType(conf)
 
 # y=0 up
 # x=0 left
@@ -391,9 +422,13 @@ class GeneticAgent(Agent):
         self.newlyBorn = True # flag for newly born agent, True by default. To be set to False once going through step()
         self.gender = gender  # neuter/male/female
         self.pregnant = False # a female or neuter agent is pregnant
+        self.hormone = False  # secrete hormone
         self.chosen = False   # a male is chosen by a neighbour female
         self.pregnantAt = -1  # when the female or neuter became pregnant, -1: invalid
         self.offspringsConf = [] # configuration of its offsprings
+        # add other nodes
+        for x in self.config.geno.others:
+            self.addNode(x)
 
     # genetic extension
     def is_mature(self):
@@ -416,6 +451,24 @@ class GeneticAgent(Agent):
 
     def is_neuter(self):
         return self.gender == 'neuter'
+
+    def is_hormoneOn(self):
+        return self.hormone
+
+    def hormoneOn(self):
+        self.hormone = True
+
+    def hormoneOff(self):
+        self.hormone = False
+
+    def getHormoneThresholdTrigger(self):
+        return self.config.geno.hormoneThresholdTrigger
+
+    def getHormoneThresholdLower(self):
+        return self.config.geno.hormoneThresholdSecreteLower
+
+    def getHormoneThresholdUpper(self):
+        return self.config.geno.hormoneThresholdSecreteUpper
 
     def is_chosen(self):
         return self.chosen
@@ -447,8 +500,42 @@ class GeneticAgent(Agent):
     def grow(self):
         self.age = self.age + 1
 
-    def ready_for_reproduction(self):
+    def addNode(self, node):
+        n, i, o = node
+        inp = []
+        outp = []
 
+        # inputs
+        for x in set(i):
+            p = self.network.nodes.get(x, None)
+            if p == None:
+                # create the node for inputs
+                for y in self.config.geno.others:
+                    if y[0] == x:
+                        p = self.addNode(y)
+                        break
+            # add p to the input list
+            inp.append(p)
+
+        # only add existing nodes to output lists
+        for y in set(o):
+            q = self.network.nodes.get(y, None)
+            if q != None:
+                outp.append(q)
+
+        # create current node
+        if n.startswith('AND'):
+            node = nodes.AndNode(inputs=inp, outputs=outp, virtual=False)
+            self.network.addNode(node)
+        elif n.startswith('SEQ'):
+            node = nodes.SEQNode(inputs=inp, outputs=outp, virtual=False)
+            self.network.addNode(node)
+        else:  # todo: for other kinds of nodes
+            pass
+
+        return node
+
+    def ready_for_reproduction(self):
         if not self.is_mature():
             return False
         if self.is_male() and (not self.is_chosen()):
@@ -466,10 +553,10 @@ class GeneticAgent(Agent):
         # neuter agent copy its network to its offspring
         loop_i = 0
         while loop_i < self.config.geno.offspringNum:
-            conf, other_nodes = reproduce(self)
+            conf = reproduce(self)
             # mutate()
-            conf, other_nodes = mutate(conf, other_nodes)
-            agent_conf = GeneticAgentConfig(conf, other_nodes)
+            conf = mutate(conf)
+            agent_conf = GeneticAgentConfig(conf)
             self.offspringsConf.append(agent_conf)
             loop_i = loop_i + 1
         # set the agent to be pregnant
@@ -498,10 +585,10 @@ class GeneticAgent(Agent):
             if self.is_female(): # self: female, agent: male
                 gdebug('female agent mates with male agent!')
                 while loop_i < offspringNumber:
-                    conf, other_nodes = cross_over(self, agent)
+                    conf = cross_over(self, agent)
                     # mutate()
-                    conf, other_nodes = mutate(conf, other_nodes)
-                    agent_conf = GeneticAgentConfig(conf, other_nodes)
+                    conf = mutate(conf)
+                    agent_conf = GeneticAgentConfig(conf)
                     self.offspringsConf.append(agent_conf)
                     loop_i = loop_i + 1
                 self.become_pregnant()
@@ -509,10 +596,10 @@ class GeneticAgent(Agent):
             else: # self: male, agent: female
                 gdebug('male agent mates with female agent!')
                 while loop_i < offspringNumber:
-                    conf, other_nodes = cross_over(agent, self)
+                    conf = cross_over(agent, self)
                     # mutate()
-                    conf, other_nodes = mutate(conf, other_nodes)
-                    agent_conf = GeneticAgentConfig(conf, other_nodes)
+                    conf = mutate(conf)
+                    agent_conf = GeneticAgentConfig(conf)
                     agent.offspringsConf.append(agent_conf)
                     loop_i = loop_i + 1
                 self.become_chosen()
@@ -550,18 +637,18 @@ class GeneticAgent(Agent):
                 else:
                     child = createGeneticAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
                 # add other nodes (AND, SEQ, OR etc)
-                other_nodes = self.offspringsConf[loop_i].geno.others
-                for n, i, o in other_nodes:
-                    inp = [v for k, v in child.network.nodes.items() if k in set(i)]
-                    outp = [v for k, v in child.network.nodes.items() if k in set(o)]
-                    if n.startswith('AND'):
-                        node = nodes.AndNode(inputs=inp, outputs=outp, virtual=False)
-                        child.network.addNode(node)
-                    elif n.startswith('SEQ'):
-                        node = nodes.SEQNode(inputs=inp, outputs=outp, virtual=False)
-                        child.network.addNode(node)
-                    else: # todo: for other kinds of nodes
-                        pass
+#                other_nodes = self.offspringsConf[loop_i].geno.others
+#                for n, i, o in other_nodes:
+#                    inp = [v for k, v in child.network.nodes.items() if k in set(i)]
+#                    outp = [v for k, v in child.network.nodes.items() if k in set(o)]
+#                    if n.startswith('AND'):
+#                        node = nodes.AndNode(inputs=inp, outputs=outp, virtual=False)
+#                        child.network.addNode(node)
+#                    elif n.startswith('SEQ'):
+#                        node = nodes.SEQNode(inputs=inp, outputs=outp, virtual=False)
+#                        child.network.addNode(node)
+#                    else: # todo: for other kinds of nodes
+#                        pass
                 offsprings.append(child)
                 loop_i = loop_i + 1
 
@@ -572,21 +659,42 @@ class GeneticAgent(Agent):
                 gender = 'female'
                 gdebug(gender + ' agent deliver ' + str(loop_i) + ' offsprings!')
 
-
         return offsprings
+
+    def takeAction(self, arg, reward):
+
+        action, prediction, numPredictions = arg
+
+        # should check sensor!
+        cell = [x.name for x in self.network.activeSensors()] # self.environment.currentCell(self)
+
+        #debug("KNOWN ACTIONS:", self.network.knownActions(need))
+
+        if not action: return
+
+        surprise = relative_surprise(prediction, reward)
+        debug("takeAction >>> - best action:", action, ", surprise:", surprise, ", numPredictions:", numPredictions, ", prediction:", prediction, ", reward:", reward, ", cell:", cell, ", action:", action,)
+
+        self.trail.append( (cell, action) )
+        self.wellbeeingTrail.append( self.wellbeeing() )
+        self._beginLearning(surprise, reward, action, prediction, numPredictions)
+
+        # update status vector
+        # cost according to the size of its brain
+        nodeAmout = self.network.node_count
+        delta = nodeAmout*self.config.geno.nodeCost
+        if delta != 0:
+            for o in self.config.objectives:
+                reward[o] = reward[o] - delta
+                debug('Function: takeAction - deduce nodes cost!')
+
+        self._updateNeeds(reward)
 
 
 class GeneticAnimalAgent(GeneticAgent):
-    def __init__(self, config, network, needs=None, position=(0, 0), gender='neuter', growthRate=0.01):
+    def __init__(self, config, network, needs=None, position=(0, 0), gender='sexual', growthRate=0.01):
         super().__init__(config, network, needs, position, gender, growthRate)
-        # genetic extension
-        self.caught = False # whether this animal is caught or not
-
-    def isCaught(self):
-        return self.caught
-
-    def setCaught(self, v):
-        self.caught = v
+        self.prey = None # the prey being locked by this agent
 
 
 class GeneticPlantAgent(GeneticAgent):
