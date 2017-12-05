@@ -27,7 +27,11 @@ from .action import *
 # Setup logging
 # =============
 
+GDEBUG_MODE = True
 DEBUG_MODE = False
+
+def gdebug(*args):
+    if GDEBUG_MODE: print('GDEBUG:genetic_agent:', *args)
 
 def debug(*args, end=''):
     if DEBUG_MODE: print('DEBUG:network:', *args)
@@ -276,7 +280,10 @@ class Network:
         for motor,v in list(actions.items()):
             actionsQ = {}
             actions_objective[motor] = actionsQ
+            if v == []:
+                gdebug("getBestAction - something is wrong. All actions: ", self.actions)
             for obj in self.objectives:
+
                 actionsQ[obj] = {
                     'min': min([action.getMinQ(obj) for action in v]),
                     'max': max([action.getMaxQ(obj) for action in v]),

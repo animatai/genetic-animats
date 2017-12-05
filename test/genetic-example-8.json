@@ -1,7 +1,7 @@
 {
   "description": "Simple learn to eat, drink and reproduce.",
-  "iterations": 1000,
-  "world":"bbc\nbbc\nbbc\nbbc\nbbc\nbbc\nbbc\nbbc",
+  "iterations": 300,
+  "world":"cbbbbbbc\ncbbbbbbc\ncbbbbbbc\ncbbbbbbc\ncbbbbbbc\ncbbbbbbc\ncbbbbbbc\ncbbbbbbc",
   "seed": 0,
   "objectives": ["water", "energy"],  
   "features": {"AND": true, "SEQ": true},  
@@ -37,7 +37,7 @@
     },
 	"fertility": "sexual",
 	"pubertyAge": 20,
-	"mortalityAge": 80,
+	"mortalityAge": 60,
 	"mortalityProb": 0.1,
 	"pregnancyLen": 10,
 	"offspringNum": 2,
@@ -70,7 +70,7 @@
     },
 	"fertility": "sexual",
 	"pubertyAge": 20,
-	"mortalityAge": 100,
+	"mortalityAge": 80,
 	"mortalityProb": 0.1,
 	"pregnancyLen": 10,
 	"offspringNum": 2,
@@ -86,7 +86,7 @@
     "PLOTTER_EVERY_FRAME":false
   },
   "nagent":{
-    "objectives":{"length":0.1},
+    "objectives":{"length":0.3},
     "wellbeeing_const": { "length":0 },
     "wellbeeing_function": "min",
     "surprise_const": 2.0,

@@ -340,8 +340,11 @@ class GeneticEnvironment(EnvClass):
 
             if isinstance(agent, GeneticPlantAgent):
                 locations = self.adjacent_available_positions_at(agent,GeneticPlantAgent)
+                gdebug('agent_reproduce: ego location ', agent.position)
+                gdebug('agent_reproduce: available positions ', locations)
                 # filter out water blocks for plant agents
                 locations = [x for x in locations if self.world[x[1]][x[0]] != 'c']
+                gdebug('agent_reproduce: available positions after filtering water blocks', locations)
             else:
                 locations = self.adjacent_available_positions_at(agent,GeneticAnimalAgent)
 

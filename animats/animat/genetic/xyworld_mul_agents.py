@@ -166,6 +166,10 @@ def timerFired():
             canvas.data.tick += 1
             animals = [x for x in canvas.data.env.agents if isinstance(x, GeneticAnimalAgent)]
             canvas.data.agentsNumberTrail.append(len(animals))
+            sheep = [x for x in canvas.data.env.agents if isinstance(x, GeneticSheepAgent)]
+            canvas.data.sheepNumberTrail.append(len(sheep))
+            wolf = [x for x in canvas.data.env.agents if isinstance(x, GeneticWolfAgent)]
+            canvas.data.wolfNumberTrail.append(len(wolf))
             redrawAll()
             # display the info. of current agent
             showCurAgentInfo()
@@ -260,9 +264,9 @@ def drawVitalityCurve(trail, ticks):
     ax0 = fig.add_subplot(211)
     plt.xlabel('Tick')
     plt.ylabel('Total amount of animats')
-    amountTrail = canvas.data.agentsNumberTrail
-    plt.title('Average amount of alive animats: %d' % np.mean(amountTrail))
-    ax0.plot(np.arange(0, ticks, 1), amountTrail, 'g-', label='Amount')
+    totalAmountTrail = canvas.data.agentsNumberTrail
+    plt.title('Average amount of alive animats: %d' % np.mean(totalAmountTrail))
+    ax0.plot(np.arange(0, ticks, 1), totalAmountTrail, 'g-', label='Amount')
 
 
     ax1 = fig.add_subplot(212)
@@ -512,6 +516,8 @@ def run2DWorld(env, maxIterations=1000):
     canvas.data.pause = True
     canvas.data.delay = 1000  # milliseconds
     canvas.data.agentsNumberTrail = []
+    canvas.data.sheepNumberTrail = []
+    canvas.data.wolfNumberTrail = []
     canvas.data.name_str = StringVar(master=root)
     canvas.data.vitality_str = StringVar(master=root)
     canvas.data.position_str = StringVar(master=root)

@@ -60,10 +60,10 @@ class Action:
         return self.node == None or self.node.isTopActive()
 
     def getName(self):
-        return motor.name
+        return self.motor.name
 
     def getId(self):
-        return (node.getId(), motor.name)
+        return (self.node.getId(), self.motor.name)
 
     def updateQ(self, reward, Qsta1):
         self.triggers = self.triggers + 1
