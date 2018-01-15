@@ -178,11 +178,14 @@ def is_more_vital_than(agent_a, agent_b):
 def mate_feasible(agent_a, agent_b):
     # check whether two agents can mate or not
     debug('Function: mate_feasible')
+    other_a = [x[0] for x in agent_a.config.geno.others]
+    other_b = [x[0] for x in agent_b.config.geno.others]
 #    dm = difference_ratio_lists(agent_a.config.geno.motors, agent_b.config.geno.motors)
 #    dn = difference_ratio_lists(agent_a.config.geno.sensors, agent_b.config.geno.sensors)
 #    return (dm + dn)/2 <= 0.4
     return (set(agent_a.config.geno.motors) == set(agent_b.config.geno.motors)
-            and set(agent_a.config.geno.sensors) == set(agent_b.config.geno.sensors))
+            and set(agent_a.config.geno.sensors) == set(agent_b.config.geno.sensors)) \
+           and (difference_ratio_lists(other_a, other_b) <= 0.05)
 
 
 
@@ -196,7 +199,11 @@ def difference_ratio_lists(list_a, list_b):
         N = len(list_a)
     else:
         N = len(list_b)
-    return (len(x)/N + len(y)/N)/2
+
+    if N == 0:
+        return 0
+    else:
+        return (len(x)/N + len(y)/N)/2
 
 
 # cross_over of in genotypes

@@ -141,10 +141,14 @@ def mousePressed(event):
         return
     else:
         canvas.data.curAgent = agents[0]
-#    showAgentsInfoWithCurve(col, row)
+    showAgentsInfoWithCurve(col, row)
 #    showCurAgentInfo()
     # draw vitality curve
     drawVitalityCurve(canvas.data.curAgent.wellbeeingTrail, canvas.data.tick)
+
+def drawCurves():
+    if canvas.data.curAgent != None:
+        drawVitalityCurve(canvas.data.curAgent.wellbeeingTrail, canvas.data.tick)
 
 
 def keyPressed(event):
@@ -165,16 +169,19 @@ def timerFired():
             canvas.data.env.step()
             canvas.data.tick += 1
             animals = [x for x in canvas.data.env.agents if isinstance(x, GeneticAnimalAgent)]
-            canvas.data.agentsNumberTrail.append(len(animals))
+            canvas.data.animatsNumberTrail.append(len(animals))
             sheep = [x for x in canvas.data.env.agents if isinstance(x, GeneticSheepAgent)]
             canvas.data.sheepNumberTrail.append(len(sheep))
             wolf = [x for x in canvas.data.env.agents if isinstance(x, GeneticWolfAgent)]
             canvas.data.wolfNumberTrail.append(len(wolf))
+            grass = [x for x in canvas.data.env.agents if isinstance(x, GeneticGrassAgent)]
+            canvas.data.grassNumberTrail.append(len(grass))
+
             redrawAll()
             # display the info. of current agent
-            showCurAgentInfo()
+#            showCurAgentInfo()
             # display the bar graph of the vitality level of current agent
-            drawVitalityBar()
+#            drawVitalityBar()
 
     canvas.after(canvas.data.delay, timerFired)  # delay, then call timerFired again
 
@@ -248,25 +255,34 @@ def drawVitalityCurve(trail, ticks):
     # getting the average of vitality levels
     energyMean = np.mean(energyTrail)
     waterMean = np.mean(waterTrail)
+    totalAnimatsTrail = canvas.data.animatsNumberTrail
+    totalWolvsTrail = canvas.data.wolfNumberTrail
+    totalSheepTrail = canvas.data.sheepNumberTrail
+    totalGrassTrail = canvas.data.grassNumberTrail
 
     # if the animal was not born at the beginning
     if len(trail) < ticks:
         start = ticks - len(trail)
     else:
         start = 0
-    debug(len(trail))
-    debug(ticks)
-    debug(start)
+#    debug(len(trail))
+#    debug(ticks)
+#    debug(start)
     X = np.arange(start, ticks, 1)
-
 
     fig = plt.figure()
     ax0 = fig.add_subplot(211)
     plt.xlabel('Tick')
-    plt.ylabel('Total amount of animats')
-    totalAmountTrail = canvas.data.agentsNumberTrail
-    plt.title('Average amount of alive animats: %d' % np.mean(totalAmountTrail))
-    ax0.plot(np.arange(0, ticks, 1), totalAmountTrail, 'g-', label='Amount')
+    plt.ylabel('History of animats')
+
+    if(len(totalAnimatsTrail) > 0 and ticks > 0):
+        Y = np.arange(0, ticks, 1)
+        plt.title('Average amount of alive animats: %d' % np.mean(totalAnimatsTrail))
+        line_sheep, = ax0.plot(Y, totalSheepTrail, 'b-', label='sheep')
+        line_wolf, = ax0.plot(Y, totalWolvsTrail, 'r-', label='wolf')
+        line_grass, = ax0.plot(Y, totalGrassTrail, 'g', label='grass')
+        plt.legend(handles=[line_sheep, line_wolf, line_grass])
+#        ax0.plot(np.arange(0, ticks, 1), totalAnimatsTrail, 'g-', label='Amount')
 
 
     ax1 = fig.add_subplot(212)
@@ -515,9 +531,10 @@ def run2DWorld(env, maxIterations=1000):
     canvas.data.fontBold = 'bold'  # tkinter_font.Font(weight='bold')
     canvas.data.pause = True
     canvas.data.delay = 1000  # milliseconds
-    canvas.data.agentsNumberTrail = []
+    canvas.data.animatsNumberTrail = []
     canvas.data.sheepNumberTrail = []
     canvas.data.wolfNumberTrail = []
+    canvas.data.grassNumberTrail = []
     canvas.data.name_str = StringVar(master=root)
     canvas.data.vitality_str = StringVar(master=root)
     canvas.data.position_str = StringVar(master=root)
@@ -550,7 +567,7 @@ def run2DWorld(env, maxIterations=1000):
     redrawAll()
     #showAgentsInfoWithCurve(0, 0)
     showCurAgentInfo()
-    drawVitalityBar()
+#    drawVitalityBar()
     timerFired()
     # and launch the app
     root.mainloop()  # This call BLOCKS (so your program waits until you close the window!)
