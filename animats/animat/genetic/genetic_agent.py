@@ -618,7 +618,7 @@ def mutate(conf):
 
     other_names = [x[0] for x in other_nodes]
     for a, b in itertools.combinations(sensors+other_names, 2):
-        if random.random() < 0.1:
+        if random.random() < 0.3:
             inputs = sorted([a, b])
             if random.random() <= 0.5:
                 name = createName('AND', inputs)
@@ -838,7 +838,7 @@ class GeneticAgent(Agent):
                 gdebug('addNode: add node to inp', p)
                 inp.append(p)
             else:
-                gdebug('addNode: somthing is wrong!', self.network.nodes.keys())
+                gdebug('addNode: something is wrong!', self.network.nodes.keys())
 
         # only add existing nodes to output lists
         for y in set(o):
@@ -942,6 +942,8 @@ class GeneticAgent(Agent):
         from .grass_agent import createGeneticGrassAgent
         from .sheep_agent import GeneticSheepAgent
         from .sheep_agent import createGeneticSheepAgent
+        from .wolf_agent import GeneticWolfAgent
+        from .wolf_agent import createGeneticWolfAgent
         debug('Function: deliver_offspring')
 
         if self.is_male() or not self.is_pregnant() or not self.ready_for_delivery():
@@ -962,6 +964,8 @@ class GeneticAgent(Agent):
                 # give birth to offspring
                 if isinstance(self, GeneticSheepAgent):
                     child = createGeneticSheepAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
+                elif isinstance(self, GeneticWolfAgent):
+                    child = createGeneticWolfAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
                 elif isinstance(self, GeneticGrassAgent):
                     child = createGeneticGrassAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
                 else:

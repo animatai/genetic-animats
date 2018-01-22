@@ -39,9 +39,13 @@ from agents import Agent
 
 # Setup logging
 # =============
-
+GENETIC_ON = True
 DEBUG_MODE = False
-GDEBUG_MODE = True
+GDEBUG_MODE = False
+ADEBUG_MODE = True
+
+def adebug(*args):
+    if ADEBUG_MODE: print('ADEBUG:genetic_environments:', *args)
 
 def gdebug(*args):
     if GDEBUG_MODE: print('GDEBUG:genetic_environments:', *args)
@@ -103,7 +107,7 @@ class GeneticEnvironment(EnvClass):
             if len(sheep) > 0:
                 # lock this sheep
                 agent.lockPrey(sheep[0])
-                gdebug('Sheep is locked!')
+                adebug('Sheep ' + sheep[0].name + ' is locked by wolf ' + agent.name)
                 # trigger sensors
                 observation['g'] = 1
                 # if current block is sand, disable it (adaption to the existing code)
@@ -143,7 +147,15 @@ class GeneticEnvironment(EnvClass):
                 agent.unset_newlyBorn()
             for agent in self.agents:
                 if agent.is_to_die():
-                    gdebug('Remove dead agent!')
+                    if isinstance(agent, GeneticGrassAgent):
+                        tmp = 'grass ' + agent.name
+                    elif isinstance(agent, GeneticSheepAgent):
+                        tmp = 'sheep ' + agent.name
+                    elif isinstance(agent, GeneticWolfAgent):
+                        tmp = 'wolf ' + agent.name
+                    else:
+                        tmp = agent.name
+                    adebug('Remove dead agent ' + tmp)
                     self.delete_thing(agent)
             for agent in self.agents:
                 if agent.alive:
@@ -158,7 +170,7 @@ class GeneticEnvironment(EnvClass):
             for agent in self.agents:
                 agent.grow()
                 agent.reset_chosen()
-            gdebug('Environment: STEP tick: ', self.counter)
+            adebug('Environment: STEP tick: ', self.counter)
             self.counter = self.counter + 1
             debug('Environment:STEP actions', actions)
             for (agent, action) in zip(self.agents, actions):
@@ -166,6 +178,7 @@ class GeneticEnvironment(EnvClass):
                     self.execute_action(agent, action)
                 elif isinstance(agent, GeneticGrassAgent):
                     agent.grow_by_length()
+                    #adebug('Grass ' + agent.name + ' grows')
                     agent.wellbeeingTrail.append(agent.wellbeeing())
 
             self.exogenous_change()
@@ -188,7 +201,7 @@ class GeneticEnvironment(EnvClass):
                 old_grass = [x for x in all_grass if not x.is_newlyborn()]
                 if len(old_grass) > 0:
                     old_grass[0].is_grazed()
-                    gdebug("sheep graze grass!")
+                    adebug('sheep ' + agent.name + ' graze grass ' + old_grass[0].name)
                     # for debugging
                     if reward['energy'] < 0:
                         debug("something is wrong!")
@@ -197,7 +210,7 @@ class GeneticEnvironment(EnvClass):
                 if sheep != None:
                     sheep.is_bitten()
                     agent.resetLockPrey()
-                    gdebug('Wolf bites sheep!')
+                    adebug('Sheep ' + sheep.name + ' is bitten by wolf ' + agent.name)
 
         agent.takeAction(action, reward)
 
@@ -315,6 +328,8 @@ class GeneticEnvironment(EnvClass):
 
     # agent tries to reproduce when possible
     def agent_reproduce(self, agent):
+        if GENETIC_ON == False:
+            return
         # exclude agents that
         #  1, are already chosen by other agents in previous iterations of current tick (not previous tick),
         #  2, are pregnant but not ready for delivery

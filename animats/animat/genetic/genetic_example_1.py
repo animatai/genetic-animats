@@ -83,7 +83,7 @@ def run(inputPath, outputPath, outputDir=None, wss=None):
     sagnt1 = createGeneticSheepAgent(sagentConfig1, sagentConfig1.objectivesWithValues.copy(), 'male')
     sagnt1.name = 'S1'
 
-    sagnt2 = createGeneticSheepAgent(sagentConfig2, sagentConfig2.objectivesWithValues.copy(), 'female')
+    sagnt2 = createGeneticSheepAgent(sagentConfig2, sagentConfig2.objectivesWithValues.copy(), 'male')
     sagnt2.name = 'S2'
 
 #    nagnt1 = createGeneticGrassAgent(nagentConfig1, nagentConfig1.objectivesWithValues.copy(), 'neuter')

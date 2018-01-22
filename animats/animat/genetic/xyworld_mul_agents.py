@@ -33,17 +33,113 @@ import graphviz as gv
 
 from .genetic_environment import *
 
+DEBUG_MODE = True
+
 
 def debug(*args):
-    print('DEBUG:xy_world:', *args)
+    if DEBUG_MODE: print('DEBUG:xy_world:', *args)
 
 
 def drawNetworkGraph():
-    g2 = gv.Digraph(format='svg')
-    g2.node('A')
-    g2.node('B')
-    g2.edge('A', 'B')
-    g2.render('img/g2')
+    debug('drawNetworkGraph')
+    g = gv.Digraph(format='svg')
+
+    a = canvas.data.curAgent
+    debug('agent name:', a.name)
+    nodes_names = a.network.nodes.keys()
+    nodes = a.network.allNodes()
+
+    sensors = []
+    others = []
+    for n in nodes_names:
+        if n[0] == '$':
+            sensors.append(n[1:])
+        else:
+            others.append(n)
+
+    with g.subgraph(name='cluster_1') as g1:
+        g1.attr(style='filled')
+        g1.attr(color='lightgrey')
+        g1.node_attr.update(style='filled', color='white')
+        g1.attr(label='Sensors')
+        # add all sensors
+        for n in sensors:
+            g1.node(n)
+        debug(g1)
+
+    if len(others) > 0:
+        with g.subgraph(name='cluster_2') as g2:
+            g2.attr(style='filled')
+            g2.attr(color='lightgrey')
+            g2.node_attr.update(style='filled', color='white')
+            g2.attr(label='AND / SEQ ')
+            # add other nodes
+            for n in others:
+                g2.node(n)
+            debug(g2)
+
+    with g.subgraph(name='cluster_3') as g3:
+        g3.attr(style='filled')
+        g3.attr(color='lightgrey')
+        g3.node_attr.update(style='filled', color='white')
+        g3.attr(label='Motors')
+        # add all motors
+        for m in a.network.motors:
+            g3.node(m.name)
+        debug(g3)
+
+    debug('edges')
+
+    # add edges between sensors and other nodes
+    for x in nodes:
+        debug(x)
+        # add in edges
+        for i in x.inputs:
+            ip = i.name
+            op = x.name
+            debug('input:', ip)
+            debug('output', op)
+            if ip[0] == '$':
+                ip = ip[1:]
+
+            g.edge(ip, op)
+
+    # add all edges to motors
+    actions = list(a.network.actions.values())
+    debug(actions)
+    #actions = a.network.availableActions()
+
+    for n in nodes:
+        acts = [x for x in actions if x.node == n]
+        qe = 0
+        qw = 0
+        ep = a.network.motors[0].name
+        wp = a.network.motors[0].name
+
+        for act in acts:
+            if act.getQ('energy') >= qe:
+                ep = act.motor.name
+                qe = act.getQ('energy')
+            if act.getQ('water') >= qw:
+                wp = act.motor.name
+                qw = act.getQ('water')
+
+        ip = n.getName()
+        if ip[0] == '$':
+            ip = ip[1:]
+
+        if qe > 0:
+            g.edge(ip, ep, color='red')
+        if qw > 0:
+            g.edge(ip, wp, color='blue')
+
+#    g.node('Agent: ' + a.name, shape='Mdiamond')
+#    g.node('Age: ' + str(a.age), shape='Msquare')
+    g.attr(label='Agent: ' + a.name + ' age: ' + str(a.age))
+    debug(g)
+    dst = 'img/'+a.name
+    #g.render(dst)
+    g.view(filename=dst)
 
 
 def isPaused():
@@ -135,16 +231,19 @@ def mousePressed(event):
     y = event.y
     col = int((x - canvas.data.margin) / canvas.data.cellSize)
     row = int((y - canvas.data.margin) / canvas.data.cellSize)
-    print("Position is clicked: col, %d, row, %d" % (col, row))
+    debug("Position is clicked: col, %d, row, %d" % (col, row))
     agents = canvas.data.env.list_agents_at((col, row), GeneticAnimalAgent)
     if agents == []:
         return
     else:
         canvas.data.curAgent = agents[0]
+
+    drawNetworkGraph()
     showAgentsInfoWithCurve(col, row)
 #    showCurAgentInfo()
     # draw vitality curve
-    drawVitalityCurve(canvas.data.curAgent.wellbeeingTrail, canvas.data.tick)
+    #drawVitalityCurve(canvas.data.curAgent.wellbeeingTrail, canvas.data.tick)
+
 
 def drawCurves():
     if canvas.data.curAgent != None:
@@ -153,8 +252,8 @@ def drawCurves():
 
 def keyPressed(event):
     # TODO:
-    drawNetworkGraph()
-    print("key is pressed!")
+#    drawNetworkGraph()
+    debug("key is pressed!")
     #    canvas.data.pause = not canvas.data.pause
     pass
 
@@ -243,7 +342,7 @@ def drawVitalityBar():
 def drawVitalityCurve(trail, ticks):
     #    X = np.linspace(-np.pi, np.pi, 256, endpoint=True)
     #    C, S = np.cos(X), np.sin(X)
-    print("draw vitality curves!")
+    debug("draw vitality curves!")
 
     energyTrail = []
     waterTrail = []
@@ -412,7 +511,7 @@ def drawAgent(agent, row, col, kind):
 
 
 def drawAgents():
-    print(len(canvas.data.env.agents))
+    debug('Total agents: ', len(canvas.data.env.agents))
     for a in canvas.data.env.agents:
         if isinstance(a, GeneticGrassAgent):
             kind = 'grass'
@@ -572,5 +671,5 @@ def run2DWorld(env, maxIterations=1000):
     # and launch the app
     root.mainloop()  # This call BLOCKS (so your program waits until you close the window!)
     plt.close('all')
-    print("the end!")
+    debug("the end!")
 
