@@ -27,11 +27,15 @@ from .action import *
 # Setup logging
 # =============
 
-GDEBUG_MODE = True
+GDEBUG_MODE = False
 DEBUG_MODE = False
+DDEBUG_MODE = False
+
+def ddebug(*args):
+    if DDEBUG_MODE: print('DDEBUG:network:', *args)
 
 def gdebug(*args):
-    if GDEBUG_MODE: print('GDEBUG:genetic_agent:', *args)
+    if GDEBUG_MODE: print('GDEBUG:network:', *args)
 
 def debug(*args, end=''):
     if DEBUG_MODE: print('DEBUG:network:', *args)
@@ -160,7 +164,9 @@ class Network:
             self.sensorsChanged = True
             self._setPreviousActive()
         self._propagate() # Tick each node, depth first
+        gdebug("network_tick: observation ", observation)
         self._findTopActive()
+
 
     def _setPreviousActive(self):
         for node in list(self.nodes.values()):
@@ -174,7 +180,11 @@ class Network:
         for node in list(self.nodes.values()):
             node.topActive = False
         for node in self.sensors:
-            node._findTopActive(verbose)
+            gdebug("sensor name: ", node.getName())
+#            if node.isActive():
+#                node.topActive = True
+            ret = node._findTopActive(verbose)
+            gdebug("result of _findTopActive() ", ret)
 
     def activeSensors(self):
         return [x for x in self.sensors if x.active]
@@ -252,7 +262,7 @@ class Network:
 
     def evaluateActionUtility(self, actionQ, status):
         newQ = {objective:self._qFunc(Q, status) for objective,Q in list(actionQ.items())}
-        debug("*** evaluateActionUtility - actionQ:", actionQ, ", status:", status ,", newQ:", newQ)
+#        ddebug("*** evaluateActionUtility - actionQ:", actionQ, ", status:", status ,", newQ:", newQ)
         return self._utilityFunc( newQ, status)
 
     def predictR(self, motor):
@@ -272,16 +282,27 @@ class Network:
     def getBestAction(self, status, epsilon=None):
         actions = {motor.name:[] for motor in self.motors}
         for action in self.availableActions():
+#            ddebug("getBestAction - action-motor: ", action.motor.name)
+#            ddebug("getBestAction - action-node: ", action.node.getName())
+#            ddebug("getBestAction - action-trigger: ", action.triggers)
             actions[action.motor.name].append(action)
-        debug("getBestAction - actions:", str([x for x in actions]))
+#        debug("getBestAction - actions:", str([x for x in actions]))
 
+        count = 0
+        for motor, e in list(actions.items()):
+            if e == []:
+                count = count + 1
+
+        if count != 0:
+            ddebug("getBestAction - empty actions sets: ", count)
 
         actions_objective = {}
         for motor,v in list(actions.items()):
             actionsQ = {}
             actions_objective[motor] = actionsQ
             if v == []:
-                gdebug("getBestAction - something is wrong. All actions: ", self.actions)
+                gdebug("getBestAction - something is wrong. All actions: ", str([x for x in self.actions]))
+                gdebug("                                    Motor: ", motor)
             for obj in self.objectives:
 
                 actionsQ[obj] = {
@@ -291,14 +312,14 @@ class Network:
                     'weighted': weightedMean([(action.getQ(obj),action.triggers) for action in v]),
                 }
 
-        debug("getBestAction - => OBJECTIVE_ACTIONS", actions_objective)
+        ddebug("getBestAction - => OBJECTIVE_ACTIONS", actions_objective)
 
         actions = []
         for action, v in list(actions_objective.items()):
             actions.append((self.evaluateActionUtility(v, status), action, v))
 
         actions = sorted(actions, key=lambda x:-x[0])
-        debug("getBestAction - DECIDE", actions)
+        debug("getBestAction - DECIDE", str([x[1] for x in actions]))
 
         # Shouldn't really happend, unless the network is empty
         if len(actions) == 0:

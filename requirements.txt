@@ -18,3 +18,4 @@ smartypants==2.0.0
 wrapt==1.10.10
 asyncio==3.4.3
 websockets==3.3
+scipy

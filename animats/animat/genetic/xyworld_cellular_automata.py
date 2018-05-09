@@ -26,6 +26,7 @@
 # from tkinter import font
 import inspect
 from tkinter import *
+from scipy import misc
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -250,11 +251,11 @@ def plotCurve(trail, ticks):
     line_paper, = ax1.plot(X, paperTrail, 'r-', label='Paper')
     line_rock, = ax1.plot(X, rockTrail, 'g-', label='Rock')
     line_scissor, = ax1.plot(X, scissorTrail, 'b-', label='Scissor')
-    ax1.annotate('Mean(Paper): %.3f, Mean(Rock): %.3f, Mean(Scissor): %.3f' % (paperMean, rockMean, scissorMean),
-                xy=(0, 0), xytext=(90, 5),
-                xycoords=('axes fraction', 'figure fraction'),
-                textcoords='offset points',
-                size=8, ha='center', va='bottom')
+#    ax1.annotate('Mean(Paper): %.3f, Mean(Rock): %.3f, Mean(Scissor): %.3f' % (paperMean, rockMean, scissorMean),
+#                xy=(0, 0), xytext=(90, 5),
+#                xycoords=('axes fraction', 'figure fraction'),
+#                textcoords='offset points',
+#                size=8, ha='center', va='bottom')
 
     plt.legend(handles=[line_paper, line_rock, line_scissor])
 
@@ -268,6 +269,10 @@ def loadWorld(rows, cols):
     # 'g': rock - green
     # 'b': scissor - blue
     items = ['r', 'g', 'b']
+
+    image = misc.imread('taiji.bmp')
+
+
 
     world = [[], []]
 
@@ -283,15 +288,148 @@ def loadWorld(rows, cols):
 #                         ['b', 'b', 'c', 'c', 'b', 'b', 'c', 'c', 'b', 'b']
 #                         ]
 
-    # randomly generate worlds of cells
+    index = [0,1,2]
+
+
     for r in range(rows):
         world[0].append([])
         world[1].append([])
+
         for c in range(cols):
-            #v = np.random.choice(items)
-            v = np.random.choice(items, p=[0.1, 0.3, 0.6])
+            # v = np.random.choice(items)
+            #v = np.random.choice(items, p=[0.1, 0.45, 0.45])
+#            if r < 77:
+#                if c < 50:
+#                    v = items[2]
+#                else:
+#                    v = items[1]
+#            else:
+#                if c < 50:
+#                    v = items[1]
+#                else:
+#                    v = items[2]
+
+#            if image[r][c] == 0:
+#                v = items[0]
+
+            if r < 50:
+                v = items[1]
+            else:
+                v = items[2]
+
+            if image[r][c] == 0:
+                v = items[0]
+
             world[0][r].append(v)
             world[1][r].append(v)
+
+    # randomly generate worlds of cells
+#    i = np.random.choice(index, p=[0.3, 0.4, 0.3])
+#    for r in range(rows):
+#        world[0].append([])
+#        world[1].append([])
+
+#        for c in range(cols):
+            #v = np.random.choice(items)
+            #v = np.random.choice(items, p=[0.1, 0.3, 0.6])
+#            v = items[i]
+#            if c%(3+(i%3)) == 1:
+#                i = (i+1)%3
+
+#            world[0][r].append(v)
+#            world[1][r].append(v)
+
+#    for r in range(0, rows, 5):
+#        world[0].append([])
+#        world[0].append([])
+#        world[0].append([])
+#        world[0].append([])
+#        world[0].append([])
+#        world[1].append([])
+#        world[1].append([])
+#        world[1].append([])
+#        world[1].append([])
+#        world[1].append([])
+
+#        for c in range(0, cols, 5):
+            #v = np.random.choice(items)
+            #v = np.random.choice(items, p=[0.1, 0.3, 0.6])
+#            i1 = i%3
+#            i2 = (i+1)%3
+#            i3 = (i+2)%3
+#            i = i+1
+
+            # row 0
+#            world[0][r].append(items[i1])
+#            world[1][r].append(items[i1])
+#            world[0][r].append(items[i1])
+#            world[1][r].append(items[i1])
+
+#            world[0][r].append(items[i2])
+#            world[1][r].append(items[i2])
+
+#            world[0][r].append(items[i3])
+#            world[1][r].append(items[i3])
+#            world[0][r].append(items[i3])
+#            world[1][r].append(items[i3])
+
+            # row 1
+#            world[0][r+1].append(items[i1])
+#            world[1][r+1].append(items[i1])
+#            world[0][r+1].append(items[i2])
+#            world[1][r+1].append(items[i2])
+
+#            world[0][r+1].append(items[i3])
+#            world[1][r+1].append(items[i3])
+
+#            world[0][r+1].append(items[i2])
+#            world[1][r+1].append(items[i2])
+#            world[0][r+1].append(items[i3])
+#            world[1][r+1].append(items[i3])
+
+            # row 2
+#            world[0][r+2].append(items[i2])
+#            world[1][r+2].append(items[i2])
+
+#            world[0][r+2].append(items[i2])
+#            world[1][r+2].append(items[i2])
+#            world[0][r+2].append(items[i3])
+#            world[1][r+2].append(items[i3])
+#            world[0][r+2].append(items[i2])
+#            world[1][r+2].append(items[i2])
+
+#            world[0][r+2].append(items[i2])
+#            world[1][r+2].append(items[i2])
+
+            # row 3
+#            world[0][r+3].append(items[i3])
+#            world[1][r+3].append(items[i3])
+#            world[0][r+3].append(items[i2])
+#            world[1][r+3].append(items[i2])
+
+#            world[0][r+3].append(items[i3])
+#            world[1][r+3].append(items[i3])
+
+#            world[0][r+3].append(items[i2])
+#            world[1][r+3].append(items[i2])
+#            world[0][r+3].append(items[i1])
+#            world[1][r+3].append(items[i1])
+
+            # row 4
+#            world[0][r+4].append(items[i3])
+#            world[1][r+4].append(items[i3])
+#            world[0][r+4].append(items[i3])
+#            world[1][r+4].append(items[i3])
+
+#            world[0][r+4].append(items[i2])
+#            world[1][r+4].append(items[i2])
+
+#            world[0][r+4].append(items[i1])
+#            world[1][r+4].append(items[i1])
+#            world[0][r+4].append(items[i1])
+#            world[1][r+4].append(items[i1])
+
+
 
     return world
 

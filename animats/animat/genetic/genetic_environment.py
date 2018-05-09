@@ -40,9 +40,9 @@ from agents import Agent
 # Setup logging
 # =============
 GENETIC_ON = True
-DEBUG_MODE = False
+DEBUG_MODE = True
 GDEBUG_MODE = False
-ADEBUG_MODE = True
+ADEBUG_MODE = False
 
 def adebug(*args):
     if ADEBUG_MODE: print('ADEBUG:genetic_environments:', *args)
@@ -99,8 +99,9 @@ class GeneticEnvironment(EnvClass):
             # find out whether there is grass
             if self.some_agents_at(agent.position, GeneticGrassAgent) and ('r' in observation):
                 # if there is grass on top of sand, set 'g' to be 1, 'r' to be 0
+                observation.clear()
                 observation['g'] = 1
-                observation.pop('r', None)
+                debug("Grass is here, observation: ", str(observation))
 
         if isinstance(agent, GeneticWolfAgent):
             sheep = self.list_agents_at(agent.position, GeneticSheepAgent)
@@ -108,11 +109,13 @@ class GeneticEnvironment(EnvClass):
                 # lock this sheep
                 agent.lockPrey(sheep[0])
                 adebug('Sheep ' + sheep[0].name + ' is locked by wolf ' + agent.name)
-                # trigger sensors
-                observation['g'] = 1
+
                 # if current block is sand, disable it (adaption to the existing code)
                 if 'r' in observation:
-                    observation.pop('r', None)
+                    observation.clear()
+                # trigger sensors
+                observation['g'] = 1
+                adebug("Sheep is nearby, observation: ", str(observation))
 
         debug('--------------\npercept - cell:' + cell + ", observation:" + str(observation))
         agent.network.tick(observation)
@@ -172,7 +175,7 @@ class GeneticEnvironment(EnvClass):
                 agent.reset_chosen()
             adebug('Environment: STEP tick: ', self.counter)
             self.counter = self.counter + 1
-            debug('Environment:STEP actions', actions)
+            adebug('Environment:STEP actions', actions)
             for (agent, action) in zip(self.agents, actions):
                 if isinstance(agent, GeneticAnimalAgent):
                     self.execute_action(agent, action)
@@ -185,7 +188,7 @@ class GeneticEnvironment(EnvClass):
 
     def execute_action(self, agent, action):
         '''changes the state of the environment based on what the agent does.'''
-        debug("execute_action - position:", agent.position, ", action:", action)
+        adebug("execute_action - position:", agent.position, ", action:", action)
 
         act, _, _ = action
         reward = self.takeAction(agent, act)
@@ -227,9 +230,9 @@ class GeneticEnvironment(EnvClass):
         # TODO: reward for multiple active sensors?
         sensor = agent.network.activeSensors()
         if sensor[0].name[1:] == 'g' and action == 'eat':
-            debug("interesting for debugging")
+            adebug("interesting for debugging")
         reward = self._getReward(action, sensor[0].name[1:], agent.needs)
-        debug("takeAction - reward:", reward, ", position:", agent.position, ", action:", action, ", wss:",
+        adebug("takeAction - reward:", reward, ", position:", agent.position, ", action:", action, ", wss:",
               self.wss)
 
         def move_agent(agent, dx, dy):
@@ -355,16 +358,16 @@ class GeneticEnvironment(EnvClass):
 
             if isinstance(agent, GeneticPlantAgent):
                 locations = self.adjacent_available_positions_at(agent,GeneticPlantAgent)
-                gdebug('agent_reproduce: ego location ', agent.position)
-                gdebug('agent_reproduce: available positions ', locations)
+                #gdebug('agent_reproduce - plant: ego location ', agent.position)
+                #gdebug('agent_reproduce - plant: available positions ', locations)
                 # filter out water blocks for plant agents
                 locations = [x for x in locations if self.world[x[1]][x[0]] != 'c']
-                gdebug('agent_reproduce: available positions after filtering water blocks', locations)
+                #debug('agent_reproduce: available positions after filtering water blocks', locations)
             else:
                 locations = self.adjacent_available_positions_at(agent,GeneticAnimalAgent)
 
             if len(locations) == 0:
-                gdebug("agent_reproduce: no available cells for offsprings delivery!")
+                #gdebug("agent_reproduce: no available cells for offsprings delivery!")
                 agent.reset_pregnancy()
                 return
 
@@ -384,7 +387,7 @@ class GeneticEnvironment(EnvClass):
                 self.add_thing(x)
                 loop_i = loop_i + 1
             agent.reset_pregnancy()
-            gdebug(str(len(self.agents)) + ' agents! neuter: ' + str(len([x for x in self.agents if x.gender == 'neuter'])) + ', male: ' + str(len([x for x in self.agents if x.gender == 'male'])) + ', female: ' + str(len([x for x in self.agents if x.gender == 'female'])))
+            debug(str(len(self.agents)) + ' agents! neuter: ' + str(len([x for x in self.agents if x.gender == 'neuter'])) + ', male: ' + str(len([x for x in self.agents if x.gender == 'male'])) + ', female: ' + str(len([x for x in self.agents if x.gender == 'female'])))
             return
 
         # mate at the chance of 0.5
@@ -400,18 +403,18 @@ class GeneticEnvironment(EnvClass):
             # find out the list of mature agents adjacent to the agent
             adjacent = self.adjacent_agents_at(agent, type(agent))
             if len(adjacent) > 0:  # if the list is not empty
-                debug('agent (male/female) has adjacent agents around!')
+                #debug('agent (male/female) has adjacent agents around!')
                 if agent.is_female():  # current agent is female
                     # female agent become pregnant by finding a male neighbour agent
                     males = [a for a in adjacent if a.is_male() and a.ready_for_reproduction()]
                     if len(males) > 0:
                         # choose a male agent randomly, take the first
-                        gdebug('female -> male')
+                        debug('female -> male')
                         agent.mate(males[0])
 
                 else:  # current agent is male
                     # male help a female neighbour agent become pregnant
                     females = [a for a in adjacent if a.is_female() and a.ready_for_reproduction()]
                     if len(females) > 0:
-                        gdebug('male -> female')
+                        debug('male -> female')
                         agent.mate(females[0])

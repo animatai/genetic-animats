@@ -36,6 +36,14 @@ from agents import Agent as AgentClass
 # =============
 
 DEBUG_MODE = False
+GDEBUG_MODE = False
+DDEBUG_MODE = False
+
+def ddebug(*args):
+    if DDEBUG_MODE: print('DDEBUG:agent:', *args)
+
+def gdebug(*args):
+    if GDEBUG_MODE: print('GDEBUG:agent:', *args)
 
 def debug(*args):
     if DEBUG_MODE: print('DEBUG:agent:', *args)
@@ -127,7 +135,7 @@ class Agent(AgentClass):
 
     # ignoring percepts, the sensors have already been updated
     def program(self, _):
-        debug("program - TICK:", self.network.time, ", network: ", self.network, "NETWORK:", list(self.network.nodes.keys()))
+        #debug("program - TICK:", self.network.time, ", network: ", self.network, "NETWORK:", list(self.network.nodes.keys()))
 
         # OBSERVE - Read new inputs and update Activation and Status
 
@@ -140,6 +148,7 @@ class Agent(AgentClass):
         else:
             self.sensorsChanged = False
 
+        debug("program - name: ", self.name, " age: ", self.age)
 
         # Learning began last tick, follow up with the new Q.
         self._endLearning()
@@ -169,7 +178,7 @@ class Agent(AgentClass):
         if not action: return
 
         surprise = relative_surprise(prediction, reward)
-        debug("takeAction >>> - best action:", action, ", surprise:", surprise, ", numPredictions:", numPredictions, ", prediction:", prediction, ", reward:", reward, ", cell:", cell, ", action:", action,)
+        ddebug("takeAction >>> - best action:", action, ", surprise:", surprise, ", numPredictions:", numPredictions, ", prediction:", prediction, ", reward:", reward, ", cell:", cell, ", action:", action,)
 
         self.trail.append( (cell, action) )
         self.wellbeeingTrail.append( self.wellbeeing() )
@@ -180,7 +189,7 @@ class Agent(AgentClass):
 
     def mostUrgentNeed(self):
         # Get the need with the lowest value
-        debug("mostUrgentNeed - needs:", self.needs)
+        ddebug("mostUrgentNeed - needs:", self.needs)
         return sorted([(v,k) for k,v in list(self.needs.items())])[0][1]
 
     def _updateNeeds(self, deltaNeeds):
@@ -193,11 +202,11 @@ class Agent(AgentClass):
                 if k != 'fear':
                     self.needs[k] = max( min(v + deltaNeeds, 1.0), 0)
 
-        debug("_updateNeeds - needs:", self.needs)
+        ddebug("_updateNeeds - needs:", self.needs)
 
     def _updateSurpriseMatrix(self, surprise, reward, action, numPredictions):
         # Don't build on top of Virtual nodes
-        debug("_updateSurpriseMatrix - numPredictions:", numPredictions, ", surprise:", surprise, ", surprise_const:", self.config.surprise_const, ", surpriseMatrix:", self.surpriseMatrix)
+        ddebug("_updateSurpriseMatrix - numPredictions:", numPredictions, ", surprise:", surprise, ", surprise_const:", self.config.surprise_const, ", surpriseMatrix:", self.surpriseMatrix)
         topnodes = self.network.activeTopNodes(includeVirtual=False)
 
         for a,b in itertools.combinations(topnodes, 2):
@@ -218,7 +227,7 @@ class Agent(AgentClass):
             if len(surprises) > 1 and self.config.features.get("AND", False):
                 _,a = leastSurprised = surprises[0]
                 _,b = mostSurprised = surprises[-1]
-                debug("_updateSurpriseMatrix - surprises:", surprises, ", mostSurprised:", mostSurprised, ", leastSurprised:", leastSurprised, ", xSurprises", xSurprises)
+                ddebug("_updateSurpriseMatrix - surprises:", surprises, ", mostSurprised:", mostSurprised, ", leastSurprised:", leastSurprised, ", xSurprises", xSurprises)
                 # Don't add nodes with the same input, or one that shares the same forefather
                 if a == b or a.isParent(b) or b.isParent(a) or self.network.hasAndNode([a,b]):
                     pass
@@ -229,7 +238,7 @@ class Agent(AgentClass):
                     # Since it's not a top-active node it will not get feedback.
                     # Check this...
                     n.updateQ(action, reward, environment.makeRewardDict(0, self.needs))
-                    debug("_updateSurpriseMatrix - >>>> Grew a new AND-node", n.desc())
+                    ddebug("_updateSurpriseMatrix - >>>> Grew a new AND-node", n.desc())
             elif self.config.features.get("SEQ", False):
                 seqSurprises = sorted([(relative_surprise(v, reward), k) for k,v in list(self.surpriseMatrix_SEQ.items())])
                 if len(seqSurprises) > 0:
@@ -241,7 +250,7 @@ class Agent(AgentClass):
                         n = nodes.SEQNode(inputs=[a, b], virtual=False)
                         self.network.addNode(n)
                         n.updateQ(action, reward, environment.makeRewardDict(0, self.needs))
-                        debug("_updateSurpriseMatrix - >>>> Grew a new SEQ-node", n.desc())
+                        ddebug("_updateSurpriseMatrix - >>>> Grew a new SEQ-node", n.desc())
 
     def _beginLearning(self, surprise, reward, action, prediction, numPredictions):
         topnodes = self.network.activeTopNodes(includeVirtual=False)

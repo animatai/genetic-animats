@@ -42,6 +42,7 @@ def debug(*args):
 
 def drawNetworkGraph():
     debug('drawNetworkGraph')
+    return
     g = gv.Digraph(format='svg')
 
     a = canvas.data.curAgent

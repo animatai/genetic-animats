@@ -59,9 +59,15 @@ class SensorNode(Node):
             else:
                 debug('Using observation ', observation)
                 x = observation.get(self.name[1:],0)
+                debug('Sensor name ', self.name)
+                debug('Observed: ', x)
 
-            if x: self.activate(time)
-            else: self.deactivate(time)
+            if x:
+                self.activate(time)
+                debug('activate!')
+            else:
+                self.deactivate(time)
+                debug('de-activate')
             return True
         else:
             return False

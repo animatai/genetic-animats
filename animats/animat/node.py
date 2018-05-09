@@ -25,6 +25,14 @@
 # =============
 
 DEBUG_MODE = False
+GDEBUG_MODE = False
+DDEBUG_MODE = False
+
+def ddebug(*args):
+    if DDEBUG_MODE: print('DDEBUG:node:', *args)
+
+def gdebug(*args):
+    if GDEBUG_MODE: print('GDEBUG:node:', *args)
 
 def debug(*args):
     if DEBUG_MODE: print('DEBUG:node:', *args)
@@ -110,7 +118,7 @@ class Node:
         for motor in network.motors:
             self.createAction(motor)
 
-        debug('setNetwork - name:', self.name, ", network:", network, "actions:", [str(x.node) for x in self.actions])
+        ddebug('setNetwork - name:', self.name, ", network:", network, "actions:", [str(x.node) for x in self.actions])
 
     def addOutput(self, node):
         if node not in self.outputs:
@@ -175,9 +183,12 @@ class Node:
         found = False
         for node in self.realOutputs():
             found = node._findTopActive(verbose) or found
+            ddebug("node in outputs - name: ", node.getName(), " active: ", node.isActive(), " topNode: ", node.isTopNode(), " topActive: ", node.isTopActive())
         if found:
+            ddebug("node - name: ", self.getName(), " sub node is topActive!")
             return True
         elif self.active:
+            ddebug("node - name: ", self.getName(), " itself is active")
             self.topActive = True
         return self.topActive
 

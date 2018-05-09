@@ -39,6 +39,11 @@ GDEBUG_MODE = False
 
 DEBUG_MODE = False
 
+MDEBUG_MODE = True
+
+def mdebug(*args):
+    if MDEBUG_MODE: print('MDEBUG:genetic_agent:', *args)
+
 def gdebug(*args):
     if GDEBUG_MODE: print('GDEBUG:genetic_agent:', *args)
 
@@ -69,7 +74,7 @@ def mean_of_two_values(a, b):
 
 
 def merge_two_dicts(a, b):
-    c = a.copy()
+    c = copy.deepcopy(a)
     c.update(b)
     return c
 
@@ -114,7 +119,7 @@ def reproduce_netconf(agent):
     conf['others'] = agent.config.geno.others
 #    conf['qtables'] = agent.config.geno.qtables.copy()
 
-    q_tables = agent.config.geno.qtables.copy()
+    q_tables = copy.deepcopy(agent.config.geno.qtables)
 
     for s in agent.config.geno.sensors:
         s = '$'+s
@@ -147,8 +152,8 @@ def reproduce_genotype(agent):
     conf['PLOTTER_EVERY_FRAME'] = False
     conf['surprise_const'] = agent.config.surprise_const
     conf['wellbeeing_function'] = agent.config.wellbeeing_function
-    conf['wellbeeing_const'] = agent.config.wellbeeing_const.copy()
-    conf['objectives'] = agent.config.objectivesWithValues.copy()
+    conf['wellbeeing_const'] = copy.deepcopy(agent.config.wellbeeing_const)
+    conf['objectives'] = copy.deepcopy(agent.config.objectivesWithValues)
     return conf
 
 
@@ -239,12 +244,12 @@ def cross_over_genotype(agent_a, agent_b):
 
     if random.random() <= 0.5:
         conf['wellbeeing_function'] = agent_a.config.wellbeeing_function
-        conf['wellbeeing_const'] = agent_a.config.wellbeeing_const.copy()
+        conf['wellbeeing_const'] = copy.deepcopy(agent_a.config.wellbeeing_const)
     else:
         conf['wellbeeing_function'] = agent_b.config.wellbeeing_function
-        conf['wellbeeing_const'] = agent_b.config.wellbeeing_const.copy()
+        conf['wellbeeing_const'] = copy.deepcopy(agent_b.config.wellbeeing_const)
 
-    conf['objectives'] = agent_a.config.objectivesWithValues.copy()
+    conf['objectives'] = copy.deepcopy(agent_a.config.objectivesWithValues)
     return conf
 
 # remove a node from the graph
@@ -254,36 +259,38 @@ def cross_over_genotype(agent_a, agent_b):
 #                   where inputs and outputs are list of node names
 def remove_node(allnodes, node):
     # remove current node
-    gdebug('remove_node nodes: ', allnodes)
-    gdebug('node to be removed: ', node)
+    mdebug('remove_node nodes: ', allnodes)
+    mdebug('node to be removed: ', node)
     allnodes = [y for y in allnodes if y[0] != node[0]]
     #gdebug('after removal: ', allnodes)
 
     name, inp, outp = node
+    # iterate nodes in its input nodes and remove connections to itself
+    for n in inp:
+        mdebug('remove_node: remove connections to input nodes!')
+        loop_i = 0
+        while loop_i < len(allnodes):
+            if allnodes[loop_i][0] == n:
+                # remove node from its outputs
+                mdebug('remove_node: find the input node: ', allnodes[loop_i])
+                x,y,z = allnodes[loop_i]
+                z = [x for x in z if x != node[0]]
+                allnodes[loop_i] = (x,y,z)
+                mdebug('remove_node: update the input node: ', allnodes[loop_i])
+            loop_i = loop_i + 1
+
+
     # iterate nodes in its output and remove them
     for x in outp:
-        gdebug('remove_node: remove output nodes. ')
+        mdebug('remove_node: remove output nodes. ')
         # find the corresponding node
         tmp = [y for y in allnodes if y.name == x]
         # remove all nodes in outputs
         for y in tmp:
             allnodes = remove_node(allnodes, y)
 
-    # iterate nodes in its input nodes and remove connections to itself
-    for n in inp:
-        gdebug('remove_node: remove connections to input nodes!')
-        loop_i = 0
-        while loop_i < len(allnodes):
-            if allnodes[loop_i][0] == n:
-                # remove node from its outputs
-                gdebug('remove_node: find the input node: ', allnodes[loop_i])
-                x,y,z = allnodes[loop_i]
-                z = [x for x in z if x != node[0]]
-                allnodes[loop_i] = (x,y,z)
-                gdebug('remove_node: update the input node: ', allnodes[loop_i])
-            loop_i = loop_i + 1
 
-    gdebug('remove_node: final result ', allnodes)
+    mdebug('remove_node: final result ', allnodes)
     return allnodes
 
 # add a node to the graph
@@ -293,8 +300,8 @@ def remove_node(allnodes, node):
 #                   where inputs and outputs are list of node names
 def add_node(allnodes, node):
     # remove current node
-    gdebug('add_node nodes: ', allnodes)
-    gdebug('node to be added: ', node)
+    mdebug('add_node nodes: ', allnodes)
+    mdebug('node to be added: ', node)
 
     name, inp, outp = node
 
@@ -304,20 +311,23 @@ def add_node(allnodes, node):
         while loop_i < len(allnodes):
             if allnodes[loop_i][0] == n:
                 # remove node from its outputs
-                gdebug('add_node: find the input node: ', allnodes[loop_i])
+                mdebug('add_node: find the input node: ', allnodes[loop_i])
                 x,y,z = allnodes[loop_i]
                 z.append(name)
                 allnodes[loop_i] = (x,y,z)
-                gdebug('add_node: update the input node: ', allnodes[loop_i])
+                mdebug('add_node: update the input node: ', allnodes[loop_i])
             loop_i = loop_i + 1
 
     allnodes.append(node)
-    gdebug('add_node: final result ', allnodes)
+    mdebug('add_node: final result ', allnodes)
     return allnodes
 
 
 def merge_sensor_nodes_by_name(agent_a, agent_b):
-    s = set(agent_a.config.geno.sensors).union(agent_b.config.geno.sensors)
+    sensors_a = copy.deepcopy(agent_a.config.geno.sensors)
+    sensors_b = copy.deepcopy(agent_b.config.geno.sensors)
+
+    s = set(sensors_a).union(sensors_b)
 
     # get the Q tables for actions of nodes (sensors + others)
     q_tables = {}
@@ -327,14 +337,19 @@ def merge_sensor_nodes_by_name(agent_a, agent_b):
         x = '$'+x
         q1 = agent_a.config.geno.qtables.get(x, None)
         q2 = agent_b.config.geno.qtables.get(x, None)
+
+        if q1 != None:
+            q1c = copy.deepcopy(q1)
+        if q2 != None:
+            q2c = copy.deepcopy(q2)
         if q1 != None and q2 == None:
             # get Q table of agent a
-            q_tables[x] = q1
+            q_tables[x] = q1c
         elif q1 == None and q2 != None:
             # get Q table of agent b
-            q_tables[x] = q2
+            q_tables[x] = q2c
         elif q1 != None and q2 != None:
-            q_tables[x] = random_choose(q1, q2)
+            q_tables[x] = random_choose(q1c, q2c)
         else:
             # if none of agents have initial q tables, we use None
             v = {k:0 for k in agent_a.network.objectives}
@@ -344,7 +359,9 @@ def merge_sensor_nodes_by_name(agent_a, agent_b):
 
 
 def merge_motor_nodes_by_name(agent_a, agent_b):
-    s = set(agent_a.config.geno.motors).union(agent_b.config.geno.motors)
+    motors_a = copy.deepcopy(agent_a.config.geno.motors)
+    motors_b = copy.deepcopy(agent_b.config.geno.motors)
+    s = set(motors_a).union(motors_b)
     return list(s)
 
 
@@ -373,33 +390,38 @@ def compl_dependency(node, all_nodes, sensors_name, existing_name):
 
 
 def merge_other_nodes_by_name(agent_a, agent_b):
+    # make copy of geno of agents a and b
+    others_a = copy.deepcopy(agent_a.config.geno.others)
+    others_b = copy.deepcopy(agent_b.config.geno.others)
+
     # extract name
-    nodes_a_names = [n for n, i, o in agent_a.config.geno.others]
-    nodes_b_names = [n for n, i, o in agent_b.config.geno.others]
+    nodes_a_names = [n for n, i, o in others_a]
+    nodes_b_names = [n for n, i, o in others_b]
+
+    if nodes_a_names != [] or nodes_b_names != []:
+        mdebug("interesting for debugging")
 
     gdebug('merge_other_nodes: node a ', nodes_a_names)
     gdebug('merge_other_nodes: node b ', nodes_b_names)
 
     # preserve the nodes in common
     nodes_a_intersect_b_names = set(nodes_a_names).intersection(set(nodes_b_names))
-    nodes_a_intersect_b = [(n, i, o) for n, i, o in agent_a.config.geno.others if n in nodes_a_intersect_b_names]
+    nodes_a_intersect_b = [(n, i, o) for n, i, o in others_a if n in nodes_a_intersect_b_names]
     gdebug('merge_other_nodes: a intersect b ', nodes_a_intersect_b)
 
 
     # a subtract b
     nodes_a_subtract_b_names = set(nodes_a_names) - set(nodes_b_names)
     # take all that are in a but not b (a - b)
-    nodes_a_subtract_b = [(n, i, o) for n, i, o in agent_a.config.geno.others if n in nodes_a_subtract_b_names]
+    nodes_a_subtract_b = [(n, i, o) for n, i, o in others_a if n in nodes_a_subtract_b_names]
     # b subtract a
     nodes_b_subtract_a_names = set(nodes_b_names) - set(nodes_a_names)
     # take all that are in b but not a (b - a)
-    nodes_b_subtract_a = [(n, i, o) for n, i, o in agent_b.config.geno.others if n in nodes_b_subtract_a_names]
+    nodes_b_subtract_a = [(n, i, o) for n, i, o in others_b if n in nodes_b_subtract_a_names]
 
     gdebug('merge_other_nodes: a-b ', nodes_a_subtract_b_names)
     gdebug('merge_other_nodes: b-a ', nodes_b_subtract_a_names)
 
-    if nodes_a_names != [] or nodes_b_names != []:
-        gdebug('merge other nodes: for debugging!')
 
     # according to the cross-over percentage drawn from the uniform dist.
     percentage = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -458,14 +480,21 @@ def merge_other_nodes_by_name(agent_a, agent_b):
         # get Q table of every action of common node n
         q1 = agent_a.config.geno.qtables.get(n, None)
         q2 = agent_b.config.geno.qtables.get(n, None)
+
+        if q1 != None:
+            q1c = copy.deepcopy(q1)
+
+        if q2 != None:
+            q2c = copy.deepcopy(q2)
+
         if q1 != None and q2 == None:
             # get Q table of agent a
-            q_tables[n] = q1
+            q_tables[n] = q1c
         elif q1 == None and q2 != None:
             # get Q table of agent b
-            q_tables[n] = q2
+            q_tables[n] = q2c
         elif q1 != None and q2 != None:
-            q_tables[n] = random_choose(q1, q2)
+            q_tables[n] = random_choose(q1c, q2c)
         else:
             # if none of agents have initial q tables, we use None
             q_tables[n] = {k:v.copy() for k in agent_a.config.geno.motors}
@@ -475,7 +504,7 @@ def merge_other_nodes_by_name(agent_a, agent_b):
         q = agent_a.config.geno.qtables.get(n, None)
         if q != None:
             # get Q table of agent a
-            q_tables[n] = q
+            q_tables[n] = copy.deepcopy(q)
         else:
             # if none of agents have initial q tables, we use None
             q_tables[n] = {k:v.copy() for k in agent_a.config.geno.motors}
@@ -485,7 +514,7 @@ def merge_other_nodes_by_name(agent_a, agent_b):
         q = agent_b.config.geno.qtables.get(n, None)
         if q != None:
             # get Q table of agent a
-            q_tables[n] = q
+            q_tables[n] = copy.deepcopy(q)
         else:
             # if none of agents have initial q tables, we use None
             q_tables[n] = {k:v.copy() for k in agent_a.config.geno.motors}
@@ -537,6 +566,8 @@ def cross_over_netconf(agent_a, agent_b):
     conf['others'] = other_nodes
     conf['qtables'] = q_all
 
+    mdebug("cross_over_netconf: others ", other_nodes)
+
     return conf
 
 
@@ -561,20 +592,22 @@ def cross_over(agent_a, agent_b):
 # return value: agent configuration and list of other nodes after mutation
 def mutate(conf):
     # agent's genome mutate
-    debug('Function: mutate')
+    mdebug('Function: mutate')
     # remove other nodes (AND, SEQ etc)
     loop_i = 0
     netconf = conf.get("network", {})
     objectives = list(conf.get("objectives", {}).keys())
-    q_all = netconf.get("qtables", {})
+    q_all = copy.deepcopy(netconf.get("qtables", {}))
     other_nodes_original = netconf.get("others", [])
     other_nodes = other_nodes_original.copy()
+    mdebug('mutate: other_nodes original ', other_nodes)
+    mdebug('mutate: q_all ', q_all.keys())
 
     # find top nodes
-    top_nodes = [n for n in other_nodes if n[2]==[]]
+    top_nodes = [n for n, i, o in other_nodes if o == []]
     # randomly select elements to remove according to mutation rate, here 50%.
     for n in top_nodes:
-        if random.random() < 0.2:
+        if random.random() < 1:
             continue
         if random.random() < 0.5:
             other_nodes = remove_node(other_nodes, n)
@@ -597,7 +630,7 @@ def mutate(conf):
                 other_nodes = add_node(other_nodes, (new_name, i, o))
                 # update the qtable: add new node, remove old node
                 q_all[new_name] = v1
-                #q_all.pop(name, None)
+                q_all.pop(name, None)
             else:
                 # no need to update other_nodes
                 # update the qtables only: switch values of two nodes
@@ -606,19 +639,19 @@ def mutate(conf):
 
     # remove q table of the nodes removed during mutation
     nodes_removed = list(set([n for n,i,o in other_nodes_original]) - set([n for n,i,o in other_nodes]))
-    gdebug('mutate: nodes_removed ', nodes_removed)
-    #gdebug('mutate: q_all ', q_all.keys())
+    mdebug('mutate: nodes to be removed ', nodes_removed)
+
     for n in nodes_removed:
         q_all.pop(n)
-    #gdebug('muate: q_all updated ', q_all.keys())
+    mdebug('muate: q_all updated ', q_all.keys())
 
     # add other nodes using existing sensors
     sensors = ['$' +x for x in netconf.get("sensors")]
     motors = netconf.get('motors', [])
 
-    other_names = [x[0] for x in other_nodes]
+    other_names = [n for n, i, o in other_nodes if o == []]
     for a, b in itertools.combinations(sensors+other_names, 2):
-        if random.random() < 0.3:
+        if random.random() < 0.1:
             inputs = sorted([a, b])
             if random.random() <= 0.5:
                 name = createName('AND', inputs)
@@ -626,21 +659,26 @@ def mutate(conf):
                 # SEQ inputs has its own order therefore cannot be sorted
                 name = createName('SEQ', inputs, sort=False)
             # check whether the node already exists or not
-            if name not in set(other_names):
+            existing_names = [x[0] for x in other_nodes]
+            if name not in set(existing_names):
                 # TODO: eliminate redundant gates i.e., g AND (b AND g)
                 # need NOT to update 'outputs' of the input nodes of the new node
                 # the update of 'outputs' will be done during initialization of agent
                 new_node = (name, inputs, [])
-                #gdebug('mutate: add new node ', new_node)
+                mdebug('mutate: add new node ', new_node)
                 other_nodes = add_node(other_nodes, new_node)
-                #gdebug('muate: other_nodes after adding new node ', other_nodes)
+
                 # update the names list
-                other_names = [x[0] for x in other_nodes]
+                existing_names = [x[0] for x in other_nodes]
                 q = {}
                 for m in motors:
                     q[m] = {k:0 for k in objectives}
                 q_all[name] = q
-                #gdebug('mutate: q_all after adding new node ', q_all.keys())
+                mdebug('mutate: qtable for new node ', q)
+
+
+    mdebug('muate: other_nodes after adding new node ', other_nodes)
+    mdebug('mutate: q_all after adding new node ', q_all.keys())
 
     allnames = [n for n, i, o in other_nodes]+sensors
     # mutate Q tables of actions of the resulted other nodes
@@ -652,7 +690,7 @@ def mutate(conf):
         for m in motors:
             q = val.get(m, {k:0 for k in objectives})
             for k in objectives:
-                d = random.uniform(-0.2, 0.2)
+                d = random.uniform(-0.01, 0.01)
                 #gdebug('random value: ', d)
                 t = q.get(k, 0)
                 q[k] = max(t+d, 0)
@@ -661,6 +699,7 @@ def mutate(conf):
             #gdebug('new q value: ', val[m])
         # assign it back to q_all
         q_all[n] = val
+
 
     # update the network configuration
     netconf["others"] = other_nodes
@@ -729,9 +768,26 @@ class GeneticAgent(Agent):
         self.brainTrail = []  # trail of its brain (dynamic graph)
         # add other nodes
         gdebug('GenericAgent_init: other nodes: ', self.config.geno.others)
+
+        if isinstance(self, GeneticAnimalAgent):
+            if self.config.geno.others != []:
+                mdebug('GenericAgent_init: other nodes!')
+
+        tmp = [n for n,i,o in self.config.geno.others]
+        tmp1 = list(set(tmp))
+        if len(tmp) != len(tmp1):
+            gdebug('GenericAgent_init: other nodes are duplicated ', tmp)
+
+
         for x in self.config.geno.others:
             self.addNode(x)
         gdebug('GenericAgent_init: other nodes are generated: ', self.network.nodes.keys())
+
+        for n in self.network.sensors:
+            nl = [x.getName() for x in n.realOutputs()]
+            nm = list(set(nl))
+            if len(nl) != len(nm):
+                mdebug('GenericAgent_init: duplicated nodes in output of node ', n.getName())
         # assign initial Q values
         for name in self.network.nodes:
             node = self.network.nodes[name]
@@ -820,25 +876,25 @@ class GeneticAgent(Agent):
         inp = []
         outp = []
 
-        gdebug('addNode: node ', node)
+        mdebug('addNode: node ', node)
         # inputs
-        for x in set(i):
-            gdebug('addNode: loop starts!')
+        for x in i:
+            mdebug('addNode: loop starts!')
             p = self.network.nodes.get(x, None)
             if p == None:
-                gdebug('addNode: node does not exist ', x)
+                mdebug('addNode: node does not exist ', x)
                 # create the node for inputs
                 for y in self.config.geno.others:
                     if y[0] == x:
-                        gdebug('addNode: find the node ', y)
+                        mdebug('addNode: find the node ', y)
                         p = self.addNode(y)
                         break
             # add p to the input list
             if p != None:
-                gdebug('addNode: add node to inp', p)
+                mdebug('addNode: add node to inp', p)
                 inp.append(p)
             else:
-                gdebug('addNode: something is wrong!', self.network.nodes.keys())
+                mdebug('addNode: something is wrong!', self.network.nodes.keys())
 
         # only add existing nodes to output lists
         for y in set(o):
@@ -846,23 +902,23 @@ class GeneticAgent(Agent):
             if q != None:
                 outp.append(q)
 
-        gdebug('addNode: inp: ', [x.name for x in inp])
-        gdebug('addNode: outp: ', [x.name for x in outp])
+        mdebug('addNode: inp: ', [x.name for x in inp])
+        mdebug('addNode: outp: ', [x.name for x in outp])
         # create current node
         newnode = None
         if n.startswith('AND'):
-            gdebug('addNode: AND node')
+            mdebug('addNode: AND node')
             newnode = nodes.AndNode(inputs=inp, outputs=outp, virtual=False)
             self.network.addNode(newnode)
         elif n.startswith('SEQ'):
-            gdebug('addNode: SEQ node')
+            mdebug('addNode: SEQ node')
             newnode = nodes.SEQNode(inputs=inp, outputs=outp, virtual=False)
             self.network.addNode(newnode)
         else:  # todo: for other kinds of nodes
-            gdebug('addNode: unknown node type, wrong!')
+            mdebug('addNode: unknown node type, wrong!')
             pass
 
-        gdebug('addNode: end ', self.network.nodes.keys())
+        mdebug('addNode: end ', self.network.nodes.keys())
         return newnode
 
     def ready_for_reproduction(self):
@@ -885,7 +941,7 @@ class GeneticAgent(Agent):
         while loop_i < self.config.geno.offspringNum:
             conf = reproduce(self)
             # mutate()
-            conf = mutate(conf)
+            #conf = mutate(conf)
             agent_conf = GeneticAgentConfig(conf)
             self.offspringsConf.append(agent_conf)
             loop_i = loop_i + 1
@@ -963,13 +1019,13 @@ class GeneticAgent(Agent):
                         gender = 'female'
                 # give birth to offspring
                 if isinstance(self, GeneticSheepAgent):
-                    child = createGeneticSheepAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
+                    child = createGeneticSheepAgent(self.offspringsConf[loop_i], copy.deepcopy(self.config.objectivesWithValues), gender)
                 elif isinstance(self, GeneticWolfAgent):
-                    child = createGeneticWolfAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
+                    child = createGeneticWolfAgent(self.offspringsConf[loop_i], copy.deepcopy(self.config.objectivesWithValues), gender)
                 elif isinstance(self, GeneticGrassAgent):
-                    child = createGeneticGrassAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
+                    child = createGeneticGrassAgent(self.offspringsConf[loop_i], copy.deepcopy(self.config.objectivesWithValues), gender)
                 else:
-                    child = createGeneticAgent(self.offspringsConf[loop_i], self.config.objectivesWithValues.copy(), gender)
+                    child = createGeneticAgent(self.offspringsConf[loop_i], copy.deepcopy(self.config.objectivesWithValues), gender)
 
                 offsprings.append(child)
                 loop_i = loop_i + 1

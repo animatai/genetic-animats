@@ -487,8 +487,8 @@ def drawAgent(agent, row, col, kind):
         else:
             canvas.create_image(left + margin, top + margin, image=img, anchor=NW)
 
-        if agent.is_hormoneOn():
-            canvas.create_image(left + margin*2, top + margin*2, image=imgh, anchor=NW)
+#        if agent.is_hormoneOn():
+#            canvas.create_image(left + margin*2, top + margin*2, image=imgh, anchor=NW)
 
         # draw the frame for the agent under spotlight
         if agent == canvas.data.curAgent:
@@ -512,6 +512,7 @@ def drawAgent(agent, row, col, kind):
 
 def drawAgents():
     debug('Total agents: ', len(canvas.data.env.agents))
+    debug('Current tick: ', canvas.data.tick)
     for a in canvas.data.env.agents:
         if isinstance(a, GeneticGrassAgent):
             kind = 'grass'
